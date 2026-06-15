@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>환불 내역 최종 확인</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #132235;
+      --panel-2: #0d1828;
+      --surface: #ffffff;
+      --ink: #182230;
+      --muted: #667085;
+      --line: #d9e2ec;
+      --accent: #0f766e;
+      --accent-2: #1d4ed8;
+      --warning: #a15c07;
+      --danger: #b42318;
+      --success-bg: #ecfdf3;
+      --success: #067647;
+      --shadow: 0 18px 45px rgba(24, 34, 48, .10);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    button, input, textarea { font: inherit; }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 392px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: var(--panel);
+      color: #fff;
+      padding: 36px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 30px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--accent);
+    }
+
+    h1 {
+      margin: 48px 0 14px;
+      font-size: 34px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 0;
+      color: #c9d6e5;
+      font-size: 15px;
+    }
+
+    .form {
+      display: grid;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: #e7eef7;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid #34445b;
+      border-radius: 6px;
+      background: var(--panel-2);
+      color: #fff;
+      padding: 13px 14px;
+      outline: none;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #5eead4;
+      box-shadow: 0 0 0 3px rgba(94, 234, 212, .16);
+    }
+
+    .button {
+      min-height: 46px;
+      border-radius: 6px;
+      border: 0;
+      padding: 0 16px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .button.primary { background: var(--accent); color: #fff; }
+    .button.dark { background: #172033; color: #fff; border: 1px solid #354258; }
+    .button.outline { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+    .button:disabled { opacity: .6; cursor: wait; }
+
+    .privacy-note {
+      margin: 0;
+      color: #a9b7c9;
+      font-size: 12px;
+    }
+
+    .main {
+      padding: 34px;
+      overflow: auto;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #e8f3f1;
+      color: #0f5f59;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) repeat(4, minmax(135px, .7fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .card, .notice, .table-wrap, .actions, .empty {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .card {
+      min-height: 112px;
+      padding: 18px;
+    }
+
+    .card span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .user-name {
+      margin: 6px 0 4px;
+      font-size: 21px;
+      font-weight: 900;
+    }
+
+    .user-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .split-metric {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .split-metric div + div {
+      border-left: 1px solid var(--line);
+      padding-left: 12px;
+    }
+
+    .split-metric strong {
+      margin-top: 0;
+    }
+
+    .notice {
+      padding: 15px 17px;
+      display: flex;
+      gap: 11px;
+      color: #344054;
+      margin-bottom: 20px;
+    }
+
+    .notice-icon {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #fff4dd;
+      color: var(--warning);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+    }
+
+    .section-title {
+      margin: 27px 0 12px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .table-wrap { overflow: hidden; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    th {
+      background: #eef3f8;
+      color: #445164;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    .money { text-align: right; font-weight: 900; }
+    .muted { color: var(--muted); }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 2px 9px;
+      background: #eef3f8;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .tag.xsolla,
+    .tag.krw {
+      background: #eef3f8;
+      color: #344054;
+    }
+
+    .tag.usdt {
+      background: #e8f3f1;
+      color: #0f766e;
+    }
+
+    .tag.usd {
+      background: #eef4ff;
+      color: #1d4ed8;
+    }
+
+
+    .account-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .account-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .account-head {
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) repeat(3, minmax(130px, .45fr));
+      gap: 12px;
+      padding: 18px;
+      align-items: start;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+
+    .account-title {
+      margin: 0 0 5px;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .account-sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .mini-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mini-metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .receipt-area {
+      padding: 16px 18px 18px;
+    }
+
+    .receipt-title {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 900;
+      color: #344054;
+    }
+
+    .receipt-table {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .receipt-table table {
+      font-size: 13px;
+    }
+
+    .receipt-table th,
+    .receipt-table td {
+      padding: 11px 10px;
+    }
+
+    .receipt-table th {
+      text-align: center;
+    }
+
+    .receipt-table .center {
+      text-align: center;
+    }
+
+    .receipt-table table { min-width: 980px; }
+    .actions {
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .request-box {
+      display: none;
+      gap: 10px;
+    }
+
+    .request-box.active { display: grid; }
+
+    .request-box textarea {
+      min-height: 96px;
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+      resize: vertical;
+    }
+
+    .message {
+      display: none;
+      padding: 13px 15px;
+      border-radius: 6px;
+      font-weight: 900;
+    }
+
+    .message.active { display: block; }
+    .message.success { background: var(--success-bg); color: var(--success); }
+    .message.error { background: #fff1f0; color: var(--danger); }
+
+    .empty {
+      min-height: 460px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      padding: 30px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { padding: 28px 22px; }
+      h1 { margin-top: 32px; font-size: 28px; }
+      .main { padding: 22px; }
+      .summary { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .summary { grid-template-columns: 1fr; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      table { min-width: 820px; }
+      .table-wrap { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <aside class="sidebar">
+      <div>
+        <div class="brand"><span class="brand-mark">R</span><span>Refund Confirmation</span></div>
+        <h1>환불 내역<br>최종 확인</h1>
+        <p class="lead">메일로 받은 인증번호와 이름을 입력하면 연결된 계정별 환불 예정 내역을 확인할 수 있습니다.</p>
+
+        <form class="form" id="lookupForm">
+          <label>
+            이름
+            <input id="nameInput" autocomplete="name" value="김민준" placeholder="예: 김민준" required>
+          </label>
+          <label>
+            인증번호
+            <input id="codeInput" value="A7K92Q" placeholder="메일에 표시된 인증번호" required>
+          </label>
+          <button class="button primary" id="lookupButton" type="submit">내역 조회</button>
+        </form>
+      </div>
+      <p class="privacy-note">실제 운영에서는 Google Apps Script가 인증번호를 검증하고 해당 유저에게 필요한 항목만 응답합니다.</p>
+    </aside>
+
+    <section class="main">
+      <div id="resultView" class="hidden">
+        <div class="toolbar">
+          <span class="pill"><span class="dot"></span><span id="statusText">확인 대기</span></span>
+          <button class="button outline" type="button" id="printButton">인쇄</button>
+        </div>
+
+        <div class="summary">
+          <section class="card">
+            <span>대상자</span>
+            <p class="user-name" id="displayName"></p>
+            <p class="user-meta" id="userMeta"></p>
+          </section>
+          <section class="card">
+            <span>총 환불 예정 금액</span>
+            <strong id="totalRefund"></strong>
+          </section>
+          <section class="card">
+            <span>엑솔라 환불액</span>
+            <strong id="xsollaRefund"></strong>
+          </section>
+          <section class="card">
+            <span>USDT 환불액</span>
+            <strong id="usdtRefund"></strong>
+          </section>
+          <section class="card">
+            <span>아이템 총합</span>
+            <div class="split-metric">
+              <div>
+                <span>칼리움</span>
+                <strong id="kaliumTotal"></strong>
+              </div>
+              <div>
+                <span>사파이어</span>
+                <strong id="sapphireTotal"></strong>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="notice">
+          <span class="notice-icon">!</span>
+          <div id="publicNote">환불 예정 금액은 제출 내역과 내부 검증 결과를 기준으로 산정되었습니다.</div>
+        </div>
+
+        <h2 class="section-title">계정별 제출 영수증</h2>
+        <div class="account-list" id="accountList"></div>
+
+        <h2 class="section-title">최종 확인</h2>
+        <section class="actions">
+          <div class="action-row">
+            <button class="button primary" type="button" id="confirmButton">내용이 맞습니다</button>
+            <button class="button dark" type="button" id="requestButton">수정 요청</button>
+          </div>
+          <div class="request-box" id="requestBox">
+            <label style="color: var(--ink)">
+              수정 요청 내용
+              <textarea id="requestMessage" placeholder="수정이 필요한 계정, 금액, 사유를 입력해주세요."></textarea>
+            </label>
+            <label style="color: var(--ink)">
+              회신 받을 이메일
+              <input id="replyEmail" style="background:#fff;color:var(--ink);border-color:var(--line)" placeholder="예: name@example.com">
+            </label>
+            <button class="button primary" type="button" id="sendRequestButton">수정 요청 제출</button>
+          </div>
+          <div class="message" id="messageBox"></div>
+        </section>
+      </div>
+
+      <div id="emptyState" class="empty">
+        <div>
+          <h2>환불 내역을 조회해주세요</h2>
+          <p>이름과 인증번호를 입력하면 본인에게 연결된 계정별 내역이 표시됩니다.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxUHCWW7luYjayr6AlpjkFjLj-rQRwON8FZUs12FO6--BVS1skCdTFQ2EbaLFMQpB-z/exec';
+
+    const mockResponse = {
+      refund_user_id: 'RF-000001',
+      display_name: '김민준',
+      primary_email_masked: 'min***@example.com',
+      account_count: 3,
+      total_refund_krw: 3482100,
+      xsolla_refund_krw: 2180000,
+      usdt_refund_krw: 441100,
+      other_refund_krw: 861000,
+      kalium_total: 27500,
+      sapphire_total: 12800,
+      public_status: 'pending',
+      public_note: '환불 예정 금액은 제출 내역과 내부 검증 결과를 기준으로 산정되었습니다. 계정, 수량, 금액 중 다른 내용이 있으면 수정 요청을 남겨주세요.',
+      accounts: [
+        {
+          account_id: 'RF-000001-A01',
+          account_email_masked: 'min***@example.com',
+          kalium_total: 18000,
+          kalium_xsolla: 18000,
+          xsolla_refund_krw: 1284000,
+          usdt_ticket_count: 0,
+          usdt_refund_usd: 0,
+          usdt_refund_krw: 0,
+          sapphire_count: 4200,
+          sapphire_refund_krw: 360000,
+          other_label: '',
+          other_refund_krw: 0,
+          account_refund_krw: 1644000,
+          currency_note: '',
+          public_note: '엑솔라 결제 내역 기준',
+          receipts: [
+            { receipt_id: 'RC-000001', transaction_id: 'TRX-20240218-001', receipt_source: 'xsolla', payment_date: '2024-02-18', currency: 'KRW', receipt_amount: 1284000, item_type: '칼리움', refund_base_date: '', exchange_rate: '', refund_amount_krw: 1284000 },
+            { receipt_id: 'RC-000002', transaction_id: 'TRX-20240302-014', receipt_source: 'xsolla', payment_date: '2024-03-02', currency: 'KRW', receipt_amount: 360000, item_type: '사파이어', refund_base_date: '', exchange_rate: '', refund_amount_krw: 360000 }
+          ]
+        },
+        {
+          account_id: 'RF-000001-A02',
+          account_email_masked: 'mj-***@example.com',
+          kalium_total: 9500,
+          kalium_xsolla: 9500,
+          xsolla_refund_krw: 896000,
+          usdt_ticket_count: 320,
+          usdt_refund_usd: 320,
+          usdt_refund_krw: 441100,
+          sapphire_count: 0,
+          sapphire_refund_krw: 0,
+          other_label: 'Tomorrowland',
+          other_refund_krw: 171000,
+          account_refund_krw: 1508100,
+          currency_note: 'USD 기준환율 적용',
+          public_note: 'USD 결제분 포함',
+          receipts: [
+            { receipt_id: 'RC-000003', transaction_id: 'TRX-20240411-032', receipt_source: 'usdt', payment_date: '2024-04-11', currency: 'USD', receipt_amount: 320, item_type: '칼리움 + USDT', refund_base_date: '2024-04-10', exchange_rate: 1378.4375, refund_amount_krw: 1337100 },
+            { receipt_id: 'RC-000004', transaction_id: 'TRX-20240504-008', receipt_source: 'xsolla', payment_date: '2024-05-04', currency: 'KRW', receipt_amount: 171000, item_type: 'Tomorrowland', refund_base_date: '', exchange_rate: '', refund_amount_krw: 171000 }
+          ]
+        },
+        {
+          account_id: 'RF-000001-A03',
+          account_email_masked: 'game***@example.net',
+          kalium_total: 0,
+          kalium_xsolla: 0,
+          xsolla_refund_krw: 0,
+          usdt_ticket_count: 0,
+          usdt_refund_usd: 0,
+          usdt_refund_krw: 0,
+          sapphire_count: 8600,
+          sapphire_refund_krw: 330000,
+          other_label: '',
+          other_refund_krw: 0,
+          account_refund_krw: 330000,
+          currency_note: '',
+          public_note: '사파이어 환불 항목',
+          receipts: [
+            { receipt_id: 'RC-000005', transaction_id: 'TRX-20240522-019', receipt_source: 'xsolla', payment_date: '2024-05-22', currency: 'KRW', receipt_amount: 330000, item_type: '사파이어', refund_base_date: '', exchange_rate: '', refund_amount_krw: 330000 }
+          ]
+        }
+      ]
+    };
+
+    let currentResult = null;
+
+    function toNumber(value) {
+      if (value === null || value === undefined || value === '') return 0;
+      if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+      const parsed = Number(String(value).replace(/[^\d.-]/g, ''));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function allReceipts(result) {
+      return (result.accounts || []).flatMap((account) => account.receipts || []);
+    }
+
+    function normalizeReceiptSource(receipt) {
+      const sourceText = [
+        receipt.receipt_source,
+        receipt.source_type,
+        receipt.source,
+        receipt['구분'],
+        receipt.item_type,
+        receipt.public_note
+      ].filter(Boolean).join(' ').toLowerCase().replace(/\s+/g, '');
+
+      if (sourceText.includes('usdt') || sourceText.includes('udst')) return 'usdt';
+      if (sourceText.includes('xsolla') || sourceText.includes('엑솔라')) return 'xsolla';
+      return sourceText;
+    }
+
+    function sumValues(items, keys) {
+      const keyList = Array.isArray(keys) ? keys : [keys];
+      return items.reduce((total, item) => {
+        const key = keyList.find((candidate) => item[candidate] !== undefined && item[candidate] !== '');
+        return total + (key ? toNumber(item[key]) : 0);
+      }, 0);
+    }
+
+    function resolveTotal(result, keys, fallbackItems, fallbackKeys) {
+      const ownKey = keys.find((key) => result[key] !== undefined && result[key] !== '');
+      if (ownKey && toNumber(result[ownKey]) > 0) return toNumber(result[ownKey]);
+      return sumValues(fallbackItems, fallbackKeys);
+    }
+
+    function formatDateOnly(value) {
+      if (!value) return '-';
+      if (value instanceof Date && !Number.isNaN(value.valueOf())) {
+        const year = value.getFullYear();
+        const month = String(value.getMonth() + 1).padStart(2, '0');
+        const day = String(value.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      const text = String(value).trim();
+      const match = text.match(/\d{4}-\d{2}-\d{2}/);
+      if (match) return match[0];
+      const parsed = new Date(text);
+      if (!Number.isNaN(parsed.valueOf())) {
+        return parsed.toISOString().slice(0, 10);
+      }
+      return text;
+    }
+
+    const formatKRW = (value) => new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(toNumber(value));
+    const formatNumber = (value) => toNumber(value).toLocaleString('ko-KR');
+
+    function showMessage(text, type = 'success') {
+      const box = document.querySelector('#messageBox');
+      box.textContent = text;
+      box.className = `message active ${type}`;
+    }
+
+    async function lookupRefund(payload) {
+      if (!API_ENDPOINT) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        if (payload.auth_code.toUpperCase() !== 'A7K92Q') throw new Error('입력한 정보와 일치하는 환불 내역이 없습니다.');
+        return mockResponse;
+      }
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'lookup', ...payload })
+      });
+      const data = await response.json();
+      if (!data.ok) throw new Error(data.message || '조회에 실패했습니다.');
+      return data.result;
+    }
+
+    async function submitConfirmation(payload) {
+      if (!API_ENDPOINT) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        return { ok: true };
+      }
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'confirm', ...payload })
+      });
+      const data = await response.json();
+      if (!data.ok) throw new Error(data.message || '저장에 실패했습니다.');
+      return data;
+    }
+
+    function renderResult(result) {
+      currentResult = result;
+      const receipts = allReceipts(result);
+      const kaliumKeys = ['kalium_count', 'calium_count', 'kalium_total', 'calium_total', 'kalium', 'calium', '칼리움', '칼리움 수량', '칼리움수량'];
+      const kaliumTotal = resolveTotal(result, ['kalium_total', 'calium_total', 'kalium', 'calium', '칼리움', '칼리움 총합'], receipts, kaliumKeys);
+      const sapphireTotal = resolveTotal(result, ['sapphire_total'], receipts, ['sapphire_count', 'sapphire_total']);
+      const xsollaRefund = resolveTotal(
+        result,
+        ['xsolla_refund_krw'],
+        receipts.filter((receipt) => normalizeReceiptSource(receipt) === 'xsolla'),
+        ['refund_amount_krw', 'xsolla_refund_krw']
+      );
+      const usdtRefund = resolveTotal(
+        result,
+        ['usdt_refund_krw', 'udst_refund_krw'],
+        receipts.filter((receipt) => normalizeReceiptSource(receipt) === 'usdt'),
+        ['refund_amount_krw', 'usdt_refund_krw', 'udst_refund_krw']
+      );
+      const totalRefund = toNumber(result.total_refund_krw) || sumValues(receipts, 'refund_amount_krw');
+      const accountCount = toNumber(result.account_count) || (result.accounts || []).length;
+      document.querySelector('#emptyState').classList.add('hidden');
+      document.querySelector('#resultView').classList.remove('hidden');
+      document.querySelector('#displayName').textContent = result.lookup_name || result.display_name;
+      document.querySelector('#userMeta').textContent = `${result.primary_email_masked || ''} · 연결 계정 ${formatNumber(accountCount)}개`;
+      document.querySelector('#totalRefund').textContent = formatKRW(totalRefund);
+      document.querySelector('#xsollaRefund').textContent = formatKRW(xsollaRefund);
+      document.querySelector('#usdtRefund').textContent = formatKRW(usdtRefund);
+      document.querySelector('#kaliumTotal').textContent = formatNumber(kaliumTotal) + '개';
+      document.querySelector('#sapphireTotal').textContent = formatNumber(sapphireTotal) + '개';
+      document.querySelector('#statusText').textContent = result.public_status === 'confirmed' ? '확인 완료' : '확인 대기';
+      document.querySelector('#publicNote').textContent = result.public_note || '환불 예정 금액을 확인해주세요.';
+
+      document.querySelector('#accountList').innerHTML = result.accounts.map((account) => {
+        const accountReceipts = account.receipts || [];
+        const accountKaliumTotal = toNumber(account.kalium_total || account.calium_total || account.kalium || account.calium || account['칼리움']) || sumValues(accountReceipts, kaliumKeys);
+        const accountSapphireTotal = toNumber(account.sapphire_count || account.sapphire_total) || sumValues(accountReceipts, ['sapphire_count', 'sapphire_total']);
+        const accountRefundTotal = toNumber(account.account_refund_krw) || sumValues(accountReceipts, 'refund_amount_krw');
+        const receiptRows = accountReceipts.length ? accountReceipts.map((receipt) => {
+          const receiptSource = normalizeReceiptSource(receipt);
+          const currency = String(receipt.currency || '').toUpperCase();
+
+          return `
+            <tr>
+              <td class="money">${receipt.transaction_id || '-'}</td>
+              <td class="center"><span class="tag ${receiptSource}">${receiptSource || '-'}</span></td>
+              <td class="center">${formatDateOnly(receipt.payment_date)}</td>
+              <td class="center"><span class="tag ${currency.toLowerCase()}">${currency || '-'}</span></td>
+              <td class="money">${currency === 'USD' ? '$' + formatNumber(receipt.receipt_amount) : formatKRW(receipt.receipt_amount)}</td>
+              <td class="center">${receipt.item_type || '-'}</td>
+              <td class="money">${formatNumber(sumValues([receipt], kaliumKeys))}개</td>
+              <td class="money">${formatNumber(sumValues([receipt], ['sapphire_count', 'sapphire_total', 'sapphire', '사파이어', '사파이어 수량', '사파이어수량']))}개</td>
+              <td class="center">${currency === 'USD' ? formatDateOnly(receipt.refund_base_date) : '-'}</td>
+              <td class="center">${currency === 'USD' && receipt.exchange_rate ? formatNumber(receipt.exchange_rate) : '-'}</td>
+              <td class="money">${formatKRW(receipt.refund_amount_krw)}</td>
+            </tr>
+          `;
+        }).join('') : '<tr><td colspan="11" class="muted">표시할 영수증 내역이 없습니다.</td></tr>';
+
+        return `
+          <section class="account-card">
+            <div class="account-head">
+              <div>
+                <p class="account-title">${account.account_email_masked}</p>
+                <div class="account-sub">${account.account_id} · ${account.public_note || '환불 항목'}</div>
+              </div>
+              <div class="mini-metric"><span>계정 환불액</span><strong>${formatKRW(accountRefundTotal)}</strong></div>
+              <div class="mini-metric"><span>칼리움</span><strong>${formatNumber(accountKaliumTotal)}개</strong></div>
+              <div class="mini-metric"><span>사파이어</span><strong>${formatNumber(accountSapphireTotal)}개</strong></div>
+            </div>
+            <div class="receipt-area">
+              <p class="receipt-title">제출 영수증 목록</p>
+              <div class="receipt-table table-wrap">
+                <table aria-label="${account.account_id} 제출 영수증 목록">
+                  <thead>
+                    <tr>
+                      <th style="width: 18%">Transaction 번호</th>
+                      <th>구분</th>
+                      <th>결제일자</th>
+                      <th>통화</th>
+                      <th>영수증 금액</th>
+                      <th>결제 내용</th>
+                      <th>칼리움 수량</th>
+                      <th>사파이어 수량</th>
+                      <th>환불 적용 기준일</th>
+                      <th>적용 환율</th>
+                      <th>환불액</th>
+                    </tr>
+                  </thead>
+                  <tbody>${receiptRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        `;
+      }).join('');
+    }
+
+    document.querySelector('#lookupForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = document.querySelector('#lookupButton');
+      button.disabled = true;
+      button.textContent = '조회 중';
+      try {
+        const result = await lookupRefund({
+          lookup_name: document.querySelector('#nameInput').value.trim(),
+          auth_code: document.querySelector('#codeInput').value.trim()
+        });
+        renderResult(result);
+        document.querySelector('#messageBox').className = 'message';
+      } catch (error) {
+        document.querySelector('#resultView').classList.add('hidden');
+        document.querySelector('#emptyState').classList.remove('hidden');
+        document.querySelector('#emptyState').innerHTML = `<div><h2>조회 결과가 없습니다</h2><p>${error.message}</p></div>`;
+      } finally {
+        button.disabled = false;
+        button.textContent = '내역 조회';
+      }
+    });
+
+    document.querySelector('#requestButton').addEventListener('click', () => {
+      document.querySelector('#requestBox').classList.toggle('active');
+      document.querySelector('#messageBox').className = 'message';
+    });
+
+    document.querySelector('#confirmButton').addEventListener('click', async () => {
+      if (!currentResult) return;
+      await submitConfirmation({
+        refund_user_id: currentResult.refund_user_id,
+        confirm_type: 'confirmed',
+        requester_name: document.querySelector('#nameInput').value.trim(),
+        account_ids: currentResult.accounts.map((item) => item.account_id)
+      });
+      document.querySelector('#requestBox').classList.remove('active');
+      showMessage('확인 완료로 저장되었습니다.');
+    });
+
+    document.querySelector('#sendRequestButton').addEventListener('click', async () => {
+      if (!currentResult) return;
+      const requestMessage = document.querySelector('#requestMessage').value.trim();
+      if (!requestMessage) {
+        showMessage('수정 요청 내용을 입력해주세요.', 'error');
+        return;
+      }
+      await submitConfirmation({
+        refund_user_id: currentResult.refund_user_id,
+        confirm_type: 'change_requested',
+        requester_name: document.querySelector('#nameInput').value.trim(),
+        reply_email: document.querySelector('#replyEmail').value.trim(),
+        request_message: requestMessage,
+        account_ids: currentResult.accounts.map((item) => item.account_id)
+      });
+      showMessage('수정 요청이 접수되었습니다.');
+    });
+
+    document.querySelector('#printButton').addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>
