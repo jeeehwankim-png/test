@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>롤러코스터 사다리 — 내기판</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#08080f;color:#fff;
+  font-family:'Segoe UI','Noto Sans KR',sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px;
+}
+h1{font-size:1.5rem;margin-bottom:2px}
+.sub{color:#777;font-size:.82rem;margin-bottom:14px}
+.phase{display:none;width:100%;max-width:520px;flex-direction:column;align-items:center}
+.phase.active{display:flex}
+.name-row{display:flex;gap:8px;width:100%;margin-bottom:8px}
+.name-row input{
+  flex:1;background:#12121e;border:1px solid #2a2a3e;
+  color:#fff;padding:10px 14px;border-radius:8px;font-size:1rem;
+}
+.name-row input:focus{outline:none;border-color:#7c3aed}
+.btn-del{
+  background:#1e0a0a;border:1px solid #3a2020;color:#c33;
+  padding:0 14px;border-radius:8px;cursor:pointer;font-size:1.1rem;
+}
+.btn-add{
+  width:100%;padding:10px;background:transparent;
+  border:1px dashed #333;border-radius:8px;
+  color:#666;cursor:pointer;margin-bottom:14px;font-size:.9rem;
+}
+.btn-add:hover{border-color:#7c3aed;color:#9d6ef5}
+.btn-add:disabled{opacity:.4;cursor:default;border-color:#333;color:#666}
+.section-label{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  color:#888;font-size:.82rem;margin-bottom:8px;
+}
+.section-label b{color:#ccc}
+.penalty-row{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-bottom:16px;padding:10px 14px;
+  background:#12121e;border:1px solid #2a2a3e;border-radius:8px;
+}
+.penalty-label{color:#ccc;font-size:.9rem;display:flex;flex-direction:column;gap:2px}
+.penalty-label small{color:#666;font-size:.74rem}
+.penalty-stepper{display:flex;align-items:center;gap:10px}
+.pen-btn{
+  width:30px;height:30px;border-radius:8px;background:#1a1a2a;
+  border:1px solid #333;color:#fff;font-size:1.05rem;cursor:pointer;line-height:1;
+}
+.pen-btn:hover:not(:disabled){border-color:#7c3aed;color:#9d6ef5}
+.pen-btn:disabled{opacity:.35;cursor:default}
+.pen-count{min-width:20px;text-align:center;font-weight:700;font-size:1.05rem}
+.btn-start{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,#7c3aed,#4c1d95);
+  border:none;border-radius:12px;color:#fff;
+  font-size:1.1rem;font-weight:700;cursor:pointer;letter-spacing:.05em;
+}
+.btn-start:hover{opacity:.9}
+#phase-game{max-width:none}
+canvas{display:block;border-radius:12px;background:#060610}
+.skip-btn{
+  margin-top:10px;padding:9px 22px;background:#14141f;
+  border:1px solid #2a2a3e;border-radius:8px;color:#777;cursor:pointer;font-size:.88rem;
+}
+.skip-btn:hover{color:#aaa;border-color:#555}
+.result-box{
+  background:linear-gradient(135deg,#150826,#080818);
+  border:2px solid #7c3aed;border-radius:16px;
+  padding:28px 36px;text-align:center;width:100%;margin-bottom:14px;
+}
+.r-icon{font-size:3rem;margin-bottom:6px}
+.r-sub{color:#999;font-size:.9rem;margin-bottom:4px}
+.r-name{font-size:2rem;font-weight:900;color:#ff5577;margin:4px 0}
+.r-label{font-size:.95rem;color:#ff9999}
+.result-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn-again{
+  padding:11px 28px;background:linear-gradient(135deg,#7c3aed,#4c1d95);
+  border:none;border-radius:10px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;
+}
+.btn-home{
+  display:inline-block;padding:11px 28px;background:#141420;
+  border:1px solid #333;border-radius:10px;color:#888;text-decoration:none;font-size:.95rem;
+}
+.ad-zone{
+  width:100%;max-width:520px;height:72px;border:1px dashed #252530;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:#333;font-size:.78rem;margin:12px 0;
+}
+.nav{width:100%;max-width:520px;margin-bottom:10px}
+.nav a{color:#555;text-decoration:none;font-size:.88rem}
+.nav a:hover{color:#aaa}
+</style>
+</head>
+<body>
+
+<div class="nav"><a href="index.html">← 내기판 홈</a></div>
+<h1>🎢 롤러코스터 사다리</h1>
+<p class="sub">레일이 꼬이고 엮인다 — 누가 벌칙에 걸릴까?</p>
+<div class="ad-zone">광고 영역</div>
+
+<!-- SETUP -->
+<div class="phase active" id="phase-setup">
+  <div class="section-label">참가자 <b><span id="pl-count">3</span> / 10</b></div>
+  <div id="name-list" style="width:100%"></div>
+  <button class="btn-add" id="btn-add">+ 참가자 추가</button>
+  <div class="penalty-row">
+    <div class="penalty-label">
+      💀 벌칙 인원
+      <small>최소 1명 · 참가자 수 - 1명까지</small>
+    </div>
+    <div class="penalty-stepper">
+      <button class="pen-btn" id="pen-minus" type="button">−</button>
+      <span class="pen-count" id="pen-count">1</span>
+      <button class="pen-btn" id="pen-plus" type="button">+</button>
+    </div>
+  </div>
+  <button class="btn-start" id="btn-start">🎢 사다리 타기!</button>
+</div>
+
+<!-- GAME -->
+<div class="phase" id="phase-game">
+  <canvas id="c"></canvas>
+  <button class="skip-btn" id="btn-skip">⏩ 결과 바로 보기</button>
+</div>
+
+<!-- RESULT -->
+<div class="phase" id="phase-result">
+  <div class="result-box">
+    <div class="r-icon">💀</div>
+    <div class="r-sub">이번 벌칙은...</div>
+    <div class="r-name" id="r-name"></div>
+    <div class="r-label" id="r-label">님이 벌칙에 걸렸습니다!</div>
+  </div>
+  <div class="result-btns">
+    <button class="btn-again" id="btn-again">🔄 다시 하기</button>
+    <a class="btn-home" href="index.html">🏠 홈으로</a>
+  </div>
+</div>
+<div class="ad-zone">광고 영역</div>
+
+<script>
+'use strict';
+
+// ═══ CONSTANTS ═══════════════════════════════════════════════
+const COLORS=['#FF6B6B','#4ECDC4','#F7DC6F','#5DADE2','#C39BD3',
+              '#FD9644','#2ECC71','#EC407A','#00BCD4','#FF7043'];
+// TWIST_FREQ=2 (integer) → sin(col·π)=0 at t=0 AND t=1 → rails at base X at both ends
+const TWIST_FREQ=2;
+const NUM_ROWS=12;
+const RUNG_PROB=0.50;
+const BASE_SPD=0.0052;
+const SLOW_SPD=0.0012;
+const SLOW_T=0.85;
+const CROSS_SPD=0.055;
+
+// ═══ STATE ═══════════════════════════════════════════════════
+let players=[],rungs=[],balls=[],particles=[];
+let penaltyCols=new Set(),penaltyCount=1,allDone=false,shake=0,animId=null;
+let canvas,ctx,W,H,TT,BB,TRACK_H;
+
+// ═══ UTILS ═══════════════════════════════════════════════════
+const ss=(t)=>t*t*(3-2*t);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+
+function showPhase(id){
+  document.querySelectorAll('.phase').forEach(el=>el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function rrect(ctx,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+// ═══ RAIL MATH ═══════════════════════════════════════════════
+// Adjacent rails are π apart in phase → maximum crossing effect.
+// amp > sp/2 guarantees actual crossings occur.
+function cfg(N){
+  const usable=W-60;
+  const sp=clamp(N>1?usable/(N-1):usable,32,75);
+  const total=sp*(N-1);
+  const lx=(W-total)/2;
+  const amp=Math.min(44,sp*0.62);
+  return {sp,lx,amp};
+}
+function railX(col,t,N){
+  const {sp,lx,amp}=cfg(N);
+  return lx+col*sp+amp*Math.sin(t*TWIST_FREQ*Math.PI*2+col*Math.PI);
+}
+function railZ(col,t,N){
+  return Math.sin(t*TWIST_FREQ*Math.PI*2+col*Math.PI);
+}
+function railY(t){return TT+t*TRACK_H;}
+// Float column → interpolated X (for ball crossing animation)
+function colX(colF,t,N){
+  const c0=Math.floor(colF),c1=Math.min(c0+1,N-1);
+  return lerp(railX(c0,t,N),railX(c1,t,N),colF-c0);
+}
+
+// ═══ RUNG GENERATION ═════════════════════════════════════════
+function genRungs(N){
+  const out=[];
+  for(let row=0;row<NUM_ROWS;row++){
+    const t=(row+0.5)/NUM_ROWS;
+    const used=new Set();
+    for(let c=0;c<N-1;c++){
+      if(used.has(c)) continue;
+      if(Math.random()<RUNG_PROB){
+        out.push({t,left:c,right:c+1,revealed:false});
+        used.add(c);used.add(c+1);
+      }
+    }
+  }
+  return out;
+}
+function computePath(startCol){
+  let col=startCol;
+  const events=[];
+  for(const r of rungs){
+    if(r.left===col){events.push({t:r.t,from:col,to:col+1,rung:r});col++;}
+    else if(r.right===col){events.push({t:r.t,from:col,to:col-1,rung:r});col--;}
+  }
+  return {events,endCol:col};
+}
+
+// ═══ RESIZE ══════════════════════════════════════════════════
+function resize(){
+  W=Math.min(window.innerWidth-24,580);
+  H=clamp(window.innerHeight-180,460,620);
+  TT=58;BB=H-68;TRACK_H=BB-TT;
+  canvas.width=W;canvas.height=H;
+}
+
+// ═══ SETUP UI ════════════════════════════════════════════════
+let _pl=['참가자 1','참가자 2','참가자 3'];
+function buildUI(){
+  const list=document.getElementById('name-list');
+  list.innerHTML='';
+  _pl.forEach((p,i)=>{
+    const d=document.createElement('div');
+    d.className='name-row';
+    d.innerHTML=`<input type="text" value="${p}" placeholder="참가자 ${i+1}" data-i="${i}">
+                 <button class="btn-del" data-i="${i}">✕</button>`;
+    list.appendChild(d);
+  });
+  document.getElementById('pl-count').textContent=_pl.length;
+  document.getElementById('btn-add').disabled=_pl.length>=10;
+  updatePenaltyUI();
+}
+function maxPenalty(){ return Math.max(1,_pl.length-1); }
+function updatePenaltyUI(){
+  const max=maxPenalty();
+  penaltyCount=clamp(penaltyCount,1,max);
+  document.getElementById('pen-count').textContent=penaltyCount;
+  document.getElementById('pen-minus').disabled=penaltyCount<=1;
+  document.getElementById('pen-plus').disabled=penaltyCount>=max;
+}
+buildUI();
+document.getElementById('pen-minus').addEventListener('click',()=>{
+  penaltyCount=clamp(penaltyCount-1,1,maxPenalty());updatePenaltyUI();
+});
+document.getElementById('pen-plus').addEventListener('click',()=>{
+  penaltyCount=clamp(penaltyCount+1,1,maxPenalty());updatePenaltyUI();
+});
+function readNames(){
+  return [...document.querySelectorAll('#name-list input')]
+    .map(el=>el.value.trim()).filter(n=>n.length>0);
+}
+document.getElementById('btn-add').addEventListener('click',()=>{
+  const n=readNames();
+  if(n.length>=10){alert('최대 10명까지 참가할 수 있어요!');return;}
+  _pl=[...n,`참가자 ${n.length+1}`];buildUI();
+});
+document.getElementById('name-list').addEventListener('click',e=>{
+  if(e.target.classList.contains('btn-del')){
+    const n=readNames();n.splice(+e.target.dataset.i,1);
+    _pl=n.length?n:['참가자 1'];buildUI();
+  }
+});
+
+// ═══ START ═══════════════════════════════════════════════════
+document.getElementById('btn-start').addEventListener('click',()=>{
+  players=readNames();
+  if(players.length<2){alert('최소 2명 필요!');return;}
+  startGame();
+});
+function startGame(){
+  showPhase('phase-game');resize();
+  const N=players.length;
+  const pc=clamp(penaltyCount,1,N-1);
+  const shuffled=[...Array(N).keys()].sort(()=>Math.random()-.5);
+  penaltyCols=new Set(shuffled.slice(0,pc));
+  rungs=genRungs(N);
+  const startCols=[...Array(N).keys()].sort(()=>Math.random()-.5);
+  balls=players.map((name,i)=>{
+    const sc=startCols[i],path=computePath(sc);
+    return {
+      name,color:COLORS[i%COLORS.length],
+      col:sc,colF:sc,t:0,
+      startCol:sc,endCol:path.endCol,
+      path,nextEvent:0,done:false,
+      crossing:false,crossFrom:sc,crossTo:sc,crossT:0,crossProg:0,
+      speed:BASE_SPD*(0.9+Math.random()*.2),
+      trail:[],
+    };
+  });
+  particles=[];allDone=false;shake=0;
+  if(animId) cancelAnimationFrame(animId);
+  animId=requestAnimationFrame(loop);
+}
+
+// ═══ LOOP ════════════════════════════════════════════════════
+function loop(){
+  update();draw();
+  if(!allDone) animId=requestAnimationFrame(loop);
+  else setTimeout(showResult,1100);
+}
+function update(){
+  const N=players.length;
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.2;p.life--;p.alpha=p.life/p.maxLife;});
+  if(shake>0) shake*=0.82;
+  let done=0;
+  for(const b of balls){
+    if(b.done){done++;continue;}
+    if(b.crossing){
+      b.crossProg=clamp(b.crossProg+CROSS_SPD,0,1);
+      b.colF=lerp(b.crossFrom,b.crossTo,ss(b.crossProg));
+      if(b.crossProg>=1){b.col=b.crossTo;b.colF=b.crossTo;b.crossing=false;}
+    } else {
+      b.t+=b.t>SLOW_T?SLOW_SPD:b.speed;
+      const ev=b.path.events[b.nextEvent];
+      if(ev&&b.t>=ev.t){
+        b.t=ev.t;b.crossing=true;
+        b.crossFrom=b.col;b.crossTo=ev.to;
+        b.crossT=ev.t;b.crossProg=0;b.nextEvent++;
+        ev.rung.revealed=true;
+        shake=Math.max(shake,7);mkSpark(b,N);
+      }
+      if(b.t>=1&&!b.crossing){
+        b.t=1;b.done=true;
+        if(penaltyCols.has(b.endCol)) shake=Math.max(shake,15);
+        mkArrive(b,N);
+      }
+    }
+    const bt=b.crossing?b.crossT:b.t;
+    b.trail.push({x:colX(b.colF,bt,N),y:railY(bt)});
+    if(b.trail.length>20) b.trail.shift();
+  }
+  allDone=done===balls.length;
+}
+
+// ═══ PARTICLES ═══════════════════════════════════════════════
+function mkP(x,y,col,n,sp,life){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,s=sp*(1.5+Math.random()*2.5);
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-sp,
+      life:life+Math.random()*12,maxLife:life+12,
+      color:col,size:2+Math.random()*2.5,alpha:1});
+  }
+}
+function mkSpark(b,N){
+  const bt=b.crossing?b.crossT:b.t;
+  mkP(colX(b.colF,bt,N),railY(bt),b.color,14,1,22);
+}
+function mkArrive(b,N){
+  mkP(colX(b.colF,1,N),railY(1),penaltyCols.has(b.endCol)?'#ff4466':'#44ff88',30,1.6,32);
+}
+
+// ═══ DRAW ════════════════════════════════════════════════════
+function draw(){
+  const N=players.length;
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if(shake>0.5) ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  drawBg();drawRungs(N);drawRails(N);drawBalls(N);
+  drawTopLabels(N);drawDestBoxes(N);drawParts();
+  ctx.restore();
+}
+function drawBg(){
+  ctx.save();ctx.strokeStyle='rgba(255,255,255,0.022)';ctx.lineWidth=1;
+  for(let i=0;i<=8;i++){
+    const y=railY(i/8);
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// The crossing illusion:
+// 1) Draw ALL rails' dark outline (9px black) in z-sorted order.
+// 2) Then draw their colored fill (4.5px) on top in same order.
+// When the front rail's colored stroke is drawn over the back rail's black outline,
+// it creates the visual gap that makes the front rail appear to pass in front.
+function drawRails(N){
+  const STEPS=85;
+  ctx.save();ctx.lineCap='round';
+  for(let step=0;step<STEPS;step++){
+    const t0=step/STEPS,t1=(step+1)/STEPS,tm=(t0+t1)/2;
+    const order=[...Array(N)].map((_,c)=>({c,z:railZ(c,tm,N)}));
+    order.sort((a,b)=>a.z-b.z); // back to front
+
+    for(const {c,z} of order){
+      const x0=railX(c,t0,N),y0=railY(t0),x1=railX(c,t1,N),y1=railY(t1);
+      // Dark gap outline (hides the back rail where front passes over)
+      ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);
+      ctx.lineWidth=9;ctx.strokeStyle='rgba(0,0,0,0.9)';ctx.shadowBlur=0;ctx.stroke();
+      // Colored rail — dimmer when behind
+      ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);
+      ctx.lineWidth=4.5;ctx.strokeStyle=COLORS[c%COLORS.length];
+      ctx.shadowColor=COLORS[c%COLORS.length];
+      ctx.shadowBlur=z>0?16:3;
+      ctx.globalAlpha=z>0?0.95:0.6;
+      ctx.stroke();
+      // White highlight on front-facing rail (3D tube illusion)
+      if(z>0.15){
+        ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);
+        ctx.lineWidth=1.5;
+        ctx.strokeStyle=`rgba(255,255,255,${0.12+z*0.18})`;
+        ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.stroke();
+      }
+    }
+  }
+  ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.restore();
+}
+
+function drawRungs(N){
+  ctx.save();ctx.lineCap='round';
+  const now=Date.now()*.001;
+  for(const r of rungs){
+    const x1=railX(r.left,r.t,N),x2=railX(r.right,r.t,N),y=railY(r.t);
+    if(r.revealed){
+      ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);
+      ctx.lineWidth=7;ctx.strokeStyle='rgba(0,0,0,0.75)';ctx.shadowBlur=0;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);
+      ctx.lineWidth=4;ctx.strokeStyle='#FFD700';
+      ctx.shadowColor='#FFD700';ctx.shadowBlur=18;ctx.globalAlpha=1;ctx.stroke();
+    } else {
+      const fl=0.05+Math.sin(now*2.8+r.t*9)*0.025;
+      ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);
+      ctx.lineWidth=2;ctx.strokeStyle=`rgba(255,255,255,${fl})`;
+      ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.stroke();
+    }
+  }
+  ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.restore();
+}
+
+function drawBalls(N){
+  ctx.save();
+  for(const b of balls){
+    const bt=b.crossing?b.crossT:b.t;
+    const bx=colX(b.colF,bt,N),by=railY(bt);
+    for(let i=1;i<b.trail.length;i++){
+      const a=(i/b.trail.length)*0.4,r=(i/b.trail.length)*5.5;
+      ctx.beginPath();ctx.arc(b.trail[i].x,b.trail[i].y,r,0,Math.PI*2);
+      ctx.fillStyle=b.color;ctx.globalAlpha=a*0.5;ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    ctx.beginPath();ctx.arc(bx,by,13,0,Math.PI*2);
+    ctx.fillStyle=b.color+'2a';ctx.fill();
+    ctx.shadowColor=b.color;ctx.shadowBlur=22;
+    const g=ctx.createRadialGradient(bx-3,by-3,1,bx,by,9);
+    g.addColorStop(0,'#fff');g.addColorStop(0.35,b.color);g.addColorStop(1,b.color+'88');
+    ctx.beginPath();ctx.arc(bx,by,9,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    ctx.shadowBlur=0;ctx.fillStyle='#fff';
+    ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    const short=b.name.length>3?b.name.slice(0,2)+'…':b.name;
+    ctx.fillText(short,bx,by);
+  }
+  ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.restore();
+}
+
+function drawTopLabels(N){
+  const {sp,lx}=cfg(N);
+  ctx.save();ctx.textAlign='center';ctx.textBaseline='bottom';
+  ctx.font='bold 11px sans-serif';
+  for(const b of balls){
+    const x=lx+b.startCol*sp,y=TT-5;
+    const tw=ctx.measureText(b.name).width;
+    rrect(ctx,x-tw/2-6,y-17,tw+12,17,5);
+    ctx.fillStyle=b.color+'28';ctx.fill();
+    ctx.fillStyle=b.color;ctx.fillText(b.name,x,y);
+  }
+  ctx.restore();
+}
+
+function drawDestBoxes(N){
+  const {sp,lx}=cfg(N);
+  ctx.save();
+  const y=BB+6,bh=36;
+  for(let c=0;c<N;c++){
+    const x=lx+c*sp,bw=Math.min(sp*.82,54);
+    const arrived=balls.find(b=>b.done&&b.endCol===c);
+    const isPen=penaltyCols.has(c);
+    if(arrived){
+      const bg=isPen?'#ff446620':'#44ff8820',bd=isPen?'#ff4466':'#44ff88';
+      rrect(ctx,x-bw/2,y,bw,bh,6);ctx.fillStyle=bg;ctx.fill();
+      ctx.strokeStyle=bd;ctx.lineWidth=2;ctx.shadowColor=bd;ctx.shadowBlur=14;ctx.stroke();
+      ctx.shadowBlur=0;ctx.fillStyle=bd;
+      ctx.font='bold 9.5px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(isPen?'💀벌칙':'✅생존',x,y+bh/2);
+    } else {
+      rrect(ctx,x-bw/2,y,bw,bh,6);
+      ctx.fillStyle='#0f0f1c';ctx.fill();
+      ctx.strokeStyle='#252535';ctx.lineWidth=1.5;ctx.shadowBlur=0;ctx.stroke();
+      ctx.fillStyle='#444';ctx.font='bold 15px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('?',x,y+bh/2);
+    }
+  }
+  ctx.restore();
+}
+
+function drawParts(){
+  ctx.save();
+  for(const p of particles){
+    ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;
+    ctx.shadowColor=p.color;ctx.shadowBlur=6;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.restore();
+}
+
+// ═══ RESULT ══════════════════════════════════════════════════
+function showResult(){
+  cancelAnimationFrame(animId);
+  const pens=balls.filter(b=>penaltyCols.has(b.endCol));
+  const names=pens.map(b=>b.name);
+  document.getElementById('r-name').textContent=names.length?names.join(', '):'?';
+  document.getElementById('r-label').textContent=
+    names.length>1?'님들이 벌칙에 걸렸습니다!':'님이 벌칙에 걸렸습니다!';
+  showPhase('phase-result');
+}
+
+// ═══ CONTROLS ════════════════════════════════════════════════
+document.getElementById('btn-skip').addEventListener('click',()=>{
+  cancelAnimationFrame(animId);
+  for(const b of balls){b.t=1;b.col=b.endCol;b.colF=b.endCol;b.done=true;b.crossing=false;b.trail=[];}
+  rungs.forEach(r=>r.revealed=true);
+  allDone=true;draw();
+  setTimeout(showResult,700);
+});
+document.getElementById('btn-again').addEventListener('click',()=>{
+  _pl=[...players];buildUI();showPhase('phase-setup');
+});
+
+// ═══ INIT ════════════════════════════════════════════════════
+canvas=document.getElementById('c');
+ctx=canvas.getContext('2d');
+window.addEventListener('resize',()=>{
+  if(document.getElementById('phase-game').classList.contains('active')) resize();
+});
+</script>
+</body>
+</html>

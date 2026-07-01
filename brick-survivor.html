@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧱 벽돌 서바이버</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f0e17;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+}
+.phase { display: none; width: 100%; max-width: 580px; }
+.phase.active { display: block; }
+
+.logo { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+.logo span { color: #4ECDC4; }
+.tagline { font-size: 13px; color: rgba(255,255,255,0.42); margin-bottom: 22px; line-height: 1.65; }
+.player-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.player-row { display: flex; align-items: center; gap: 8px; animation: fi 0.18s ease; }
+@keyframes fi { from { opacity:0; transform:translateY(-4px); } to { opacity:1; } }
+.cdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.player-row input {
+  flex: 1; min-width: 0;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px; padding: 8px 10px;
+  font-size: 14px; color: #fff; font-family: inherit; outline: none;
+  transition: border-color 0.15s;
+}
+.player-row input:focus { border-color: rgba(255,255,255,0.28); }
+.player-row input::placeholder { color: rgba(255,255,255,0.18); }
+.del-btn {
+  background: none; border: none; color: rgba(255,255,255,0.22);
+  font-size: 16px; cursor: pointer; padding: 2px 5px; line-height: 1; flex-shrink: 0;
+}
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+.btn {
+  padding: 11px 18px; border-radius: 10px; font-size: 14px;
+  cursor: pointer; font-family: inherit; font-weight: 600; border: none;
+  transition: transform 0.08s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-p { background: #fff; color: #0f0e17; }
+.btn-s { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.12); }
+
+canvas { display: block; width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.07); }
+#status { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+.chip { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; border: 1px solid; font-size: 11px; transition: opacity 0.4s; }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+.gf { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.spd { font-size: 11px; color: rgba(255,255,255,0.28); }
+
+.r-loser { border-radius: 14px; padding: 24px 16px; text-align: center; margin-bottom: 16px; }
+.r-list { display: flex; flex-direction: column; gap: 5px; }
+.r-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 9px; font-size: 13px;
+}
+.ad { width: 100%; max-width: 580px; height: 54px; border: 1px dashed rgba(255,255,255,0.07); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.13); margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<div class="ad">광고 영역 320×50</div>
+
+<div class="phase active" id="ph-input">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:rgba(255,255,255,0.35);text-decoration:none;margin-bottom:14px;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">← 내기판 홈</a>
+  <div class="logo">🧱 벽돌 <span>서바이버</span></div>
+  <div class="tagline">70개의 벽돌이 방사형으로 배치됩니다.<br>공이 중앙에서 퍼져나가며 벽돌을 깨고, 마지막까지 벽돌이 남은 사람이 벌칙!</div>
+  <div class="player-grid" id="player-list"></div>
+  <div class="btn-row">
+    <button class="btn btn-s" onclick="addPlayer()">+ 참가자 추가</button>
+    <button class="btn btn-p" onclick="startGame()">게임 시작 →</button>
+  </div>
+</div>
+
+<div class="phase" id="ph-game">
+  <canvas id="gc"></canvas>
+  <div id="status"></div>
+  <div class="gf">
+    <span class="spd" id="spd-label">속도 ×1.0</span>
+    <button class="btn btn-s" onclick="goHome()" style="padding:5px 12px;font-size:11px;">← 나가기</button>
+  </div>
+</div>
+
+<div class="phase" id="ph-result">
+  <div id="result-content"></div>
+  <div class="btn-row">
+    <a href="index.html" class="btn btn-s" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">🏠 홈으로</a>
+    <button class="btn btn-s" onclick="goHome()">처음으로</button>
+    <button class="btn btn-p" onclick="restartGame()">다시 하기 →</button>
+  </div>
+</div>
+
+<div class="ad" style="margin-top:18px;margin-bottom:0;">광고 영역 320×50</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════
+const COLORS = [
+  '#FF6B6B','#4ECDC4','#F7DC6F','#5DADE2',
+  '#C39BD3','#FD9644','#2ECC71','#EC407A',
+  '#00BCD4','#FF7043'
+];
+// Radial ring layout: 5+10+15+20+20 = 70 bricks total
+const RING_DEF = [
+  { r: 44,  n: 5  },
+  { r: 88,  n: 10 },
+  { r: 132, n: 15 },
+  { r: 176, n: 20 },
+  { r: 220, n: 20 },
+];
+const TOTAL  = 70;
+const BALL_R = 8;
+const SPD0   = 6.0;
+const SPDMAX = 15;
+const MAXP   = 10;
+const EDUR   = 108;
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let pCount = 0, lastNames = [];
+let players = [], bricks = [], balls = [], parts = [];
+let running = false, animId = null;
+let elimSt  = null;
+let smult   = 1;
+let t0      = 0;
+let eo      = [];
+let cenX    = 0, cenY = 0;  // canvas center (set in initGame)
+let rings   = [];            // scaled ring config
+let brickW  = 44, brickH = 15;
+
+// ═══════════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════════
+function addPlayer(name = '') {
+  if (pCount >= MAXP) return;
+  const i = pCount++;
+  const div = document.createElement('div');
+  div.className = 'player-row';
+  div.innerHTML =
+    `<span class="cdot" style="background:${COLORS[i]}"></span>` +
+    `<input type="text" placeholder="이름 ${i+1}" value="${name}" maxlength="5" />` +
+    (i >= 2 ? `<button class="del-btn" onclick="removeP(this)">✕</button>` : '');
+  document.getElementById('player-list').appendChild(div);
+}
+function removeP(btn) {
+  btn.closest('.player-row').remove(); pCount--;
+  [...document.querySelectorAll('.player-row .cdot')].forEach((d,i)=>{ d.style.background=COLORS[i]; });
+}
+function getNames() {
+  return [...document.querySelectorAll('#player-list input')].map(el=>el.value.trim()).filter(n=>n);
+}
+function startGame() {
+  const ns = getNames();
+  if (ns.length < 2) { alert('참가자를 2명 이상 입력해주세요.'); return; }
+  lastNames = ns; initGame(ns);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function initGame(ns) {
+  showPhase('ph-game');
+  const gc = document.getElementById('gc');
+  const W  = Math.min(gc.parentElement.clientWidth || 560, 580);
+  const H  = Math.round(W * 0.9);
+  gc.width = W; gc.height = H;
+
+  cenX = W / 2; cenY = H / 2;
+
+  // Scale rings to fit canvas
+  const sc = Math.min(W, H) / 520;
+  rings   = RING_DEF.map(rd => ({ r: Math.round(rd.r * sc), n: rd.n }));
+  brickW  = Math.round(44 * sc);
+  brickH  = Math.round(15 * sc);
+
+  // Players
+  players = ns.map((name, i) => ({
+    name, color: COLORS[i % COLORS.length],
+    alive: true, brickCount: 0, eo: -1
+  }));
+
+  // Assignment: floor(50/n) per player, remainder → indestructible (-1)
+  const n   = ns.length;
+  const ppb = Math.floor(TOTAL / n);
+  const rem = TOTAL - ppb * n;
+  const asgn = [];
+  for (let pi = 0; pi < n; pi++) for (let j = 0; j < ppb; j++) asgn.push(pi);
+  for (let i = 0; i < rem; i++) asgn.push(-1);
+  shuffle(asgn);
+
+  // Build bricks in concentric rings (tangential orientation)
+  bricks = [];
+  let idx = 0;
+  for (const ring of rings) {
+    for (let j = 0; j < ring.n; j++) {
+      const theta = (j / ring.n) * Math.PI * 2 - Math.PI / 2; // start from top
+      const pi = asgn[idx++];
+      if (pi >= 0) players[pi].brickCount++;
+      bricks.push({
+        cx:    cenX + ring.r * Math.cos(theta),
+        cy:    cenY + ring.r * Math.sin(theta),
+        w:     brickW,
+        h:     brickH,
+        angle: theta + Math.PI / 2,  // tangential: brick lies along arc
+        pi,
+        alive: true,
+        spark: 0
+      });
+    }
+  }
+
+  // 10 balls from center, evenly spread in all directions
+  smult = 1; t0 = Date.now(); elimSt = null; eo = []; parts = [];
+  balls = [];
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const s = SPD0 * (0.88 + Math.random() * 0.28);
+    balls.push({ x: cenX, y: cenY, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: BALL_R, trail: [] });
+  }
+
+  running = true;
+  cancelAnimationFrame(animId);
+  requestAnimationFrame(loop);
+  renderStatus(); updSpd();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOOP
+// ═══════════════════════════════════════════
+let lt = 0;
+function loop(ts) {
+  if (!running) return;
+  const dt = Math.min((ts - lt) / 16.67, 2.5); lt = ts;
+  update(dt); draw();
+  animId = requestAnimationFrame(loop);
+}
+
+function update(dt) {
+  // Particles
+  parts.forEach(p => {
+    p.life -= dt; p.r += dt * 0.35;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 0.12 * dt;
+  });
+  parts = parts.filter(p => p.life > 0);
+
+  // Spark timers
+  bricks.forEach(bk => { if (bk.spark > 0) bk.spark -= dt; });
+
+  // Elim pause
+  if (elimSt) {
+    elimSt.frames -= dt;
+    if (elimSt.frames <= 0) {
+      elimSt = null;
+      const alive = players.filter(p => p.alive);
+      if (alive.length <= 1) {
+        if (alive.length === 1) alive[0].eo = players.length;
+        setTimeout(endGame, 500); return;
+      }
+    }
+    return;
+  }
+
+  const gc = document.getElementById('gc');
+  const W = gc.width, H = gc.height;
+
+  balls.forEach(ball => {
+    // Trail
+    ball.trail.push({ x: ball.x, y: ball.y });
+    if (ball.trail.length > 14) ball.trail.shift();
+
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+
+    // Wall bounces
+    if (ball.x - ball.r < 0)  { ball.x = ball.r;    ball.vx =  Math.abs(ball.vx); }
+    if (ball.x + ball.r > W)  { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+    if (ball.y - ball.r < 0)  { ball.y = ball.r;     ball.vy =  Math.abs(ball.vy); }
+    if (ball.y + ball.r > H)  { ball.y = H - ball.r; ball.vy = -Math.abs(ball.vy); }
+
+    // Brick collision (rotated AABB)
+    for (const bk of bricks) {
+      if (!bk.alive) continue;
+      if (!hitTest(ball, bk)) continue;
+
+      doBounce(ball, bk);
+
+      if (bk.pi === -1) {
+        // Indestructible: spark only
+        bk.spark = 10;
+        spawnSpark(bk);
+      } else {
+        bk.alive = false;
+        players[bk.pi].brickCount--;
+        burst(bk, players[bk.pi].color);
+
+        if (players[bk.pi].brickCount <= 0 && players[bk.pi].alive) {
+          eo.push(bk.pi);
+          players[bk.pi].alive = false;
+          players[bk.pi].eo   = eo.length;
+          speedUp();
+          elimSt = { pi: bk.pi, frames: EDUR };
+          renderStatus(); updSpd();
+        }
+      }
+      break;
+    }
+  });
+}
+
+// ── Rotated AABB collision ──
+function hitTest(ball, bk) {
+  const dx = ball.x - bk.cx, dy = ball.y - bk.cy;
+  const c = Math.cos(-bk.angle), s = Math.sin(-bk.angle);
+  const lx = dx * c - dy * s, ly = dx * s + dy * c;
+  const clx = Math.max(-bk.w / 2, Math.min(lx, bk.w / 2));
+  const cly = Math.max(-bk.h / 2, Math.min(ly, bk.h / 2));
+  return (lx - clx) ** 2 + (ly - cly) ** 2 < ball.r ** 2;
+}
+
+function doBounce(ball, bk) {
+  const dx = ball.x - bk.cx, dy = ball.y - bk.cy;
+  const c = Math.cos(-bk.angle), s = Math.sin(-bk.angle);
+  const lx = dx * c - dy * s, ly = dx * s + dy * c;
+  const clx = Math.max(-bk.w / 2, Math.min(lx, bk.w / 2));
+  const cly = Math.max(-bk.h / 2, Math.min(ly, bk.h / 2));
+
+  // Collision normal in local space
+  let nx = lx - clx, ny = ly - cly;
+  const len = Math.sqrt(nx * nx + ny * ny) || 0.001;
+  nx /= len; ny /= len;
+
+  // Rotate normal back to world space
+  const c2 = Math.cos(bk.angle), s2 = Math.sin(bk.angle);
+  const wnx = nx * c2 - ny * s2, wny = nx * s2 + ny * c2;
+
+  // Reflect velocity
+  const dot = ball.vx * wnx + ball.vy * wny;
+  ball.vx -= 2 * dot * wnx;
+  ball.vy -= 2 * dot * wny;
+}
+
+function burst(bk, color) {
+  for (let i = 0; i < 10; i++) {
+    const a = Math.random() * Math.PI * 2, s = 1.5 + Math.random() * 3;
+    parts.push({ x: bk.cx, y: bk.cy, vx: Math.cos(a)*s, vy: Math.sin(a)*s-0.8, r: 2+Math.random()*3, life: 14+Math.random()*12, maxLife: 26, color });
+  }
+}
+function spawnSpark(bk) {
+  for (let i = 0; i < 5; i++) {
+    const a = Math.random() * Math.PI * 2;
+    parts.push({ x: bk.cx, y: bk.cy, vx: Math.cos(a)*2.5, vy: Math.sin(a)*2.5, r: 1.5, life: 7, maxLife: 7, color: '#9999bb' });
+  }
+}
+function speedUp() {
+  smult = Math.min(smult + 0.2, SPDMAX / SPD0);
+  balls.forEach(b => {
+    const spd = Math.hypot(b.vx, b.vy), next = Math.min(spd * 1.2, SPDMAX);
+    b.vx = b.vx / spd * next; b.vy = b.vy / spd * next;
+  });
+}
+
+// ═══════════════════════════════════════════
+// DRAW
+// ═══════════════════════════════════════════
+function draw() {
+  const gc  = document.getElementById('gc');
+  const ctx = gc.getContext('2d');
+  const W = gc.width, H = gc.height;
+
+  // Background
+  ctx.fillStyle = '#0f0e17'; ctx.fillRect(0, 0, W, H);
+
+  // Ring guides (very subtle circles)
+  rings.forEach(ring => {
+    ctx.beginPath(); ctx.arc(cenX, cenY, ring.r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  // Center origin dot
+  ctx.beginPath(); ctx.arc(cenX, cenY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
+
+  // ── Bricks ──
+  bricks.forEach(bk => {
+    if (!bk.alive) return;
+
+    ctx.save();
+    ctx.translate(bk.cx, bk.cy);
+    ctx.rotate(bk.angle);
+
+    const hw = bk.w / 2, hh = bk.h / 2;
+
+    if (bk.pi === -1) {
+      // Indestructible
+      const fl = Math.max(0, bk.spark / 10);
+      ctx.fillStyle = fl > 0 ? `rgba(160,160,210,${0.15+fl*0.28})` : 'rgba(255,255,255,0.05)';
+      rrect(ctx, -hw+1, -hh+1, bk.w-2, bk.h-2, 3); ctx.fill();
+
+      // Hatch
+      ctx.save();
+      ctx.beginPath(); rrect(ctx, -hw+1, -hh+1, bk.w-2, bk.h-2, 3); ctx.clip();
+      ctx.strokeStyle = fl > 0 ? 'rgba(180,180,230,0.3)' : 'rgba(255,255,255,0.07)';
+      ctx.lineWidth = 1;
+      for (let d = -bk.h; d < bk.w + bk.h; d += 7) {
+        ctx.beginPath(); ctx.moveTo(-hw+d, -hh); ctx.lineTo(-hw+d+bk.h, hh); ctx.stroke();
+      }
+      ctx.restore();
+      ctx.strokeStyle = fl > 0 ? 'rgba(160,160,220,0.45)' : 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      rrect(ctx, -hw+1, -hh+1, bk.w-2, bk.h-2, 3); ctx.stroke();
+
+    } else {
+      const p = players[bk.pi];
+      ctx.globalAlpha = p.alive ? 1 : 0.08;
+
+      // Body
+      ctx.fillStyle = p.color;
+      rrect(ctx, -hw+1, -hh+1, bk.w-2, bk.h-2, 3); ctx.fill();
+      // Shine
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      rrect(ctx, -hw+2, -hh+2, bk.w-4, (bk.h-3)*0.4, 2); ctx.fill();
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      rrect(ctx, -hw+1, hh-5, bk.w-2, 4, 2); ctx.fill();
+
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.restore();
+  });
+
+  // ── Particles ──
+  parts.forEach(p => {
+    const t = p.life / p.maxLife;
+    ctx.globalAlpha = t * 0.88;
+    ctx.fillStyle   = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(p.r, 0.1), 0, Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // ── Ball trails ──
+  balls.forEach(ball => {
+    ball.trail.forEach((pt, i) => {
+      const t = i / ball.trail.length;
+      ctx.globalAlpha = t * 0.18;
+      ctx.fillStyle   = '#fff';
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, ball.r*t, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  });
+
+  // ── Balls ──
+  balls.forEach(ball => {
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r*2.3, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.beginPath(); ctx.arc(ball.x-ball.r*0.27, ball.y-ball.r*0.27, ball.r*0.3, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.fill();
+  });
+
+  // ── Elim overlay ──
+  if (elimSt) {
+    const p  = players[elimSt.pi];
+    const t  = elimSt.frames / EDUR;
+    const a  = Math.min(t * 2, 1) * 0.68;
+    ctx.fillStyle = p.color + Math.round(a*255).toString(16).padStart(2,'0');
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalAlpha  = Math.min(t*2, 1);
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    const fs = Math.max(20, Math.round(W / 12));
+    ctx.font      = `bold ${fs}px -apple-system,sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 14;
+    ctx.fillText(`💥 ${p.name} 탈락!`, W/2, H/2 - fs*0.55);
+
+    const alive = players.filter(pl => pl.alive).length;
+    ctx.font      = `${Math.round(fs*0.55)}px sans-serif`;
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillText(`${alive}명 남았습니다`, W/2, H/2 + fs*0.5);
+
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+}
+
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h); ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r); ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════
+// STATUS
+// ═══════════════════════════════════════════
+function renderStatus() {
+  document.getElementById('status').innerHTML = players.map(p => `
+    <div class="chip" style="border-color:${p.alive?p.color+'55':'rgba(255,255,255,0.07)'};background:${p.alive?p.color+'18':'transparent'};opacity:${p.alive?1:0.38};">
+      <span class="chip-dot" style="background:${p.alive?p.color:'#444'}"></span>
+      <span style="color:${p.alive?'#eee':'rgba(255,255,255,0.38)'};">${p.name}</span>
+      <span style="color:${p.alive?p.color:'#555'};font-size:10px;">${p.alive?p.brickCount+'개':'탈락'}</span>
+    </div>`).join('');
+}
+function updSpd() {
+  const el = document.getElementById('spd-label');
+  if (el) el.textContent = `속도 ×${smult.toFixed(1)}`;
+}
+
+// ═══════════════════════════════════════════
+// END
+// ═══════════════════════════════════════════
+function endGame() {
+  running = false; cancelAnimationFrame(animId);
+  const loser  = players.find(p => p.alive) || players[players.length-1];
+  const sorted = [...players].filter(p => p !== loser).sort((a,b) => a.eo - b.eo);
+  const n = players.length, ppb = Math.floor(TOTAL/n), rem = TOTAL-ppb*n;
+
+  document.getElementById('result-content').innerHTML = `
+    <div class="r-loser" style="background:${loser.color}22;border:1px solid ${loser.color}44;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.42);">마지막까지 살아남은 벽돌의 주인</div>
+      <div style="font-size:48px;margin:10px 0;">😱</div>
+      <div style="font-size:28px;font-weight:700;color:${loser.color};">${loser.name}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:6px;">벌칙 당첨!</div>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.28);margin-bottom:8px;">
+      이번 게임: ${n}명 · 각 ${ppb}개${rem>0?` · 고정 ${rem}개`:''}
+    </div>
+    <div class="r-list">
+      ${sorted.map((p,i) => `
+        <div class="r-row">
+          <span style="font-size:11px;color:rgba(255,255,255,0.3);min-width:30px;">${i+1}위</span>
+          <span style="width:8px;height:8px;border-radius:50%;background:${p.color};flex-shrink:0;"></span>
+          <span>${p.name}</span>
+          <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.28);">안전 ✓</span>
+        </div>`).join('')}
+      <div class="r-row" style="border-color:${loser.color}44;">
+        <span style="font-size:11px;color:${loser.color};min-width:30px;">최후</span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${loser.color};flex-shrink:0;"></span>
+        <span style="color:${loser.color};font-weight:600;">${loser.name}</span>
+        <span style="margin-left:auto;font-size:11px;color:${loser.color};">😱 벌칙!</span>
+      </div>
+    </div>`;
+  showPhase('ph-result');
+}
+
+// ═══════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════
+function showPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function restartGame() { initGame(lastNames); }
+function goHome() { running = false; cancelAnimationFrame(animId); showPhase('ph-input'); }
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+addPlayer('마준');
+addPlayer('준호');
+addPlayer('수진');
+</script>
+</body>
+</html>

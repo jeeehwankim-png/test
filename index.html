@@ -1,1182 +1,391 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>환불 내역 최종 확인</title>
-  <style>
-    :root {
-      --bg: #f5f7fb;
-      --panel: #132235;
-      --panel-2: #0d1828;
-      --surface: #ffffff;
-      --ink: #182230;
-      --muted: #667085;
-      --line: #d9e2ec;
-      --accent: #0f766e;
-      --accent-2: #1d4ed8;
-      --warning: #a15c07;
-      --danger: #b42318;
-      --success-bg: #ecfdf3;
-      --success: #067647;
-      --shadow: 0 18px 45px rgba(24, 34, 48, .10);
-      --radius: 8px;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
-      line-height: 1.5;
-    }
-
-    button, input, textarea { font: inherit; }
-
-    .shell {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 392px minmax(0, 1fr);
-    }
-
-    .sidebar {
-      background: var(--panel);
-      color: #fff;
-      padding: 36px 32px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 30px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 900;
-    }
-
-    .brand-mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      background: var(--accent);
-    }
-
-    h1 {
-      margin: 48px 0 14px;
-      font-size: 34px;
-      line-height: 1.18;
-      letter-spacing: 0;
-    }
-
-    .lead {
-      margin: 0;
-      color: #c9d6e5;
-      font-size: 15px;
-    }
-
-    .form {
-      display: grid;
-      gap: 15px;
-      margin-top: 30px;
-    }
-
-    label {
-      display: grid;
-      gap: 7px;
-      color: #e7eef7;
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    input, textarea {
-      width: 100%;
-      border: 1px solid #34445b;
-      border-radius: 6px;
-      background: var(--panel-2);
-      color: #fff;
-      padding: 13px 14px;
-      outline: none;
-    }
-
-    input:focus, textarea:focus {
-      border-color: #5eead4;
-      box-shadow: 0 0 0 3px rgba(94, 234, 212, .16);
-    }
-
-    .button {
-      min-height: 46px;
-      border-radius: 6px;
-      border: 0;
-      padding: 0 16px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .button.primary { background: var(--accent); color: #fff; }
-    .button.dark { background: #172033; color: #fff; border: 1px solid #354258; }
-    .button.outline { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
-    .button:disabled { opacity: .6; cursor: wait; }
-
-    .privacy-note {
-      margin: 0;
-      color: #a9b7c9;
-      font-size: 12px;
-    }
-
-    .main {
-      padding: 34px;
-      overflow: auto;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 22px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 8px 12px;
-      background: #e8f3f1;
-      color: #0f5f59;
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .summary {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) repeat(4, minmax(135px, .7fr));
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-
-    .card, .notice, .table-wrap, .actions, .empty {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
-
-    .card {
-      min-height: 112px;
-      padding: 18px;
-    }
-
-    .card span {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .card strong {
-      display: block;
-      margin-top: 8px;
-      font-size: 24px;
-      line-height: 1.2;
-    }
-
-    .user-name {
-      margin: 6px 0 4px;
-      font-size: 21px;
-      font-weight: 900;
-    }
-
-    .user-meta {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .split-metric {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .split-metric div + div {
-      border-left: 1px solid var(--line);
-      padding-left: 12px;
-    }
-
-    .split-metric strong {
-      margin-top: 0;
-    }
-
-    .notice {
-      padding: 15px 17px;
-      display: flex;
-      gap: 11px;
-      color: #344054;
-      margin-bottom: 20px;
-    }
-
-    .notice-icon {
-      width: 24px;
-      height: 24px;
-      flex: 0 0 auto;
-      border-radius: 50%;
-      background: #fff4dd;
-      color: var(--warning);
-      display: grid;
-      place-items: center;
-      font-weight: 900;
-    }
-
-    .section-title {
-      margin: 27px 0 12px;
-      font-size: 19px;
-      letter-spacing: 0;
-    }
-
-    .table-wrap { overflow: hidden; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 14px 12px;
-      border-bottom: 1px solid var(--line);
-      text-align: left;
-      vertical-align: top;
-      word-break: keep-all;
-      overflow-wrap: anywhere;
-    }
-
-    th {
-      background: #eef3f8;
-      color: #445164;
-      font-size: 12px;
-      font-weight: 900;
-    }
-
-    tr:last-child td { border-bottom: 0; }
-    .money { text-align: right; font-weight: 900; }
-    .muted { color: var(--muted); }
-
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      border-radius: 999px;
-      padding: 2px 9px;
-      background: #eef3f8;
-      color: #344054;
-      font-size: 12px;
-      font-weight: 900;
-    }
-
-    .tag.xsolla,
-    .tag.krw {
-      background: #eef3f8;
-      color: #344054;
-    }
-
-    .tag.usdt {
-      background: #e8f3f1;
-      color: #0f766e;
-    }
-
-    .tag.usd {
-      background: #eef4ff;
-      color: #1d4ed8;
-    }
-
-    .tag.refund-ok {
-      background: #ecfdf3;
-      color: #067647;
-    }
-
-    .tag.refund-no {
-      background: #fff1f0;
-      color: #b42318;
-    }
-
-
-    .account-list {
-      display: grid;
-      gap: 16px;
-    }
-
-    .account-card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .account-head {
-      display: grid;
-      grid-template-columns: minmax(210px, 1fr) repeat(3, minmax(130px, .45fr));
-      gap: 12px;
-      padding: 18px;
-      align-items: start;
-      border-bottom: 1px solid var(--line);
-      background: #fbfcfe;
-    }
-
-    .account-title {
-      margin: 0 0 5px;
-      font-size: 17px;
-      font-weight: 900;
-    }
-
-    .account-sub {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .mini-metric span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .mini-metric strong {
-      display: block;
-      margin-top: 4px;
-      font-size: 16px;
-      font-weight: 900;
-    }
-
-    .receipt-area {
-      padding: 16px 18px 18px;
-    }
-
-    .receipt-title {
-      margin: 0 0 10px;
-      font-size: 14px;
-      font-weight: 900;
-      color: #344054;
-    }
-
-    .receipt-table {
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .receipt-table table {
-      font-size: 13px;
-    }
-
-    .receipt-table th,
-    .receipt-table td {
-      padding: 11px 10px;
-    }
-
-    .receipt-table th {
-      text-align: center;
-    }
-
-    .receipt-table .center {
-      text-align: center;
-    }
-
-    .receipt-table table { min-width: 980px; }
-
-    .admin-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(150px, 1fr));
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-
-    .admin-table table {
-      min-width: 1100px;
-    }
-
-    .admin-table th,
-    .admin-table td {
-      border-right: 1px solid var(--line);
-    }
-
-    .admin-table th:last-child,
-    .admin-table td:last-child {
-      border-right: 0;
-    }
-
-    .admin-table .compact {
-      width: 108px;
-      text-align: center;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .admin-table .amount {
-      min-width: 96px;
-      font-size: 15px;
-      font-weight: 900;
-    }
-
-    .admin-table .person {
-      min-width: 80px;
-    }
-
-    .admin-table .account-no {
-      min-width: 120px;
-      font-size: 12px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .actions {
-      padding: 20px;
-      display: grid;
-      gap: 14px;
-      margin-top: 18px;
-    }
-
-    .action-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .request-box {
-      display: none;
-      gap: 10px;
-    }
-
-    .request-box.active { display: grid; }
-
-    .request-box textarea {
-      min-height: 96px;
-      background: #fff;
-      color: var(--ink);
-      border-color: var(--line);
-      resize: vertical;
-    }
-
-    .message {
-      display: none;
-      padding: 13px 15px;
-      border-radius: 6px;
-      font-weight: 900;
-    }
-
-    .message.active { display: block; }
-    .message.success { background: var(--success-bg); color: var(--success); }
-    .message.error { background: #fff1f0; color: var(--danger); }
-
-    .empty {
-      min-height: 460px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      color: var(--muted);
-      padding: 30px;
-    }
-
-    .hidden { display: none !important; }
-
-    @media (max-width: 980px) {
-      .shell { grid-template-columns: 1fr; }
-      .sidebar { padding: 28px 22px; }
-      h1 { margin-top: 32px; font-size: 28px; }
-      .main { padding: 22px; }
-      .summary { grid-template-columns: 1fr 1fr; }
-    }
-
-    @media (max-width: 680px) {
-      .summary { grid-template-columns: 1fr; }
-      .toolbar { align-items: flex-start; flex-direction: column; }
-      table { min-width: 820px; }
-      .table-wrap { overflow-x: auto; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내기판 — 친구들과 즐기는 랜덤 게임</title>
+<meta name="description" content="친구들끼리 내기할 때 쓰는 랜덤 게임 모음. 벽돌 서바이버, 사다리 타기, 다트, 수영 레이스.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #FFFDF9;
+    --card:    #FFFFFF;
+    --ink:     #17140F;
+    --muted:   #767268;
+    --line:    #EDE7DC;
+    --orange:  #FF5C1A;
+    --orange-soft: #FFEEE0;
+    --orange-soft2:#FFF3E9;
+    --font-display: 'Jua', 'Malgun Gothic', sans-serif;
+    --font-body: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  a { color: inherit; text-decoration: none; }
+  svg { display: block; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+
+  /* ===== AD ZONES ===== */
+  .ad-zone {
+    background: var(--orange-soft2);
+    border: 1.5px dashed #E9C7AC;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #C9A483; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .ad-top { width: 100%; height: 84px; }
+  .ad-between { width: 100%; max-width: 700px; height: 84px; margin: 0 auto; }
+
+  .top-banner { padding: 14px 32px 0; }
+
+  /* ===== HEADER ===== */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 26px 0 10px;
+  }
+  .logo { font-family: var(--font-display); font-size: 26px; color: var(--ink); }
+  .logo .dot { color: var(--orange); }
+  nav { display: flex; align-items: center; gap: 34px; }
+  nav a { font-weight: 500; color: #4a463f; font-size: 15px; }
+  nav a:hover { color: var(--ink); }
+  .btn-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--ink); color: #fff; font-weight: 700;
+    padding: 12px 26px; border-radius: 100px; font-size: 14px;
+    transition: transform 0.15s, background 0.2s;
+  }
+  .btn-pill:hover { background: var(--orange); transform: translateY(-1px); }
+
+  /* ===== HERO ===== */
+  .hero {
+    display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+    gap: 40px; padding: 56px 0 40px;
+  }
+  .hero-kicker {
+    color: var(--orange); font-weight: 700; font-size: 14px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .hero h1 {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(34px, 4.6vw, 56px); line-height: 1.28; color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .hero h1 .hl { color: var(--orange); }
+  .hero p { color: var(--muted); font-size: 17px; max-width: 420px; margin-bottom: 30px; }
+  .hero-art { display: flex; justify-content: center; }
+
+  /* ===== SECTION ===== */
+  .section { padding: 54px 0; }
+  .section-head { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+  .section-head h2 {
+    font-family: var(--font-display); font-weight: 400; font-size: 32px; color: var(--ink); text-align: center;
+  }
+  .section-sub { text-align: center; color: var(--muted); font-size: 15px; margin-bottom: 40px; }
+
+  /* ===== QUOTE / ABOUT SPLIT ===== */
+  .split {
+    display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 48px;
+    padding: 50px 0;
+  }
+  .split-art { display: flex; justify-content: center; }
+  .quote-text { font-size: 21px; font-weight: 500; line-height: 1.6; color: var(--ink); }
+  .quote-attr { display: block; margin-top: 18px; color: var(--orange); font-family: var(--font-display); font-size: 15px; }
+
+  /* ===== GAME GRID ===== */
+  .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px; }
+  .game-card {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 22px;
+    padding: 20px; display: flex; flex-direction: column; gap: 12px;
+    cursor: pointer; transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  }
+  .game-card:hover { transform: translateY(-5px); box-shadow: 0 16px 34px rgba(23,20,15,0.08); border-color: #f0d9c3; }
+  .card-thumb {
+    background: var(--orange-soft2); border-radius: 16px;
+    aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center;
+  }
+  .card-thumb svg { width: 62%; height: 62%; }
+  .card-row1 { display: flex; align-items: center; justify-content: space-between; }
+  .card-name { font-family: var(--font-display); font-size: 17px; font-weight: 400; color: var(--ink); }
+  .badge-live {
+    background: var(--orange-soft); color: var(--orange); font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 100px; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .badge-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+  .card-desc { color: var(--muted); font-size: 13px; line-height: 1.55; flex: 1; }
+  .card-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+  .meta-tag { font-size: 11px; color: #8b8579; background: #F6F2EA; padding: 3px 9px; border-radius: 100px; }
+  .card-cta {
+    display: block; text-align: center; width: 100%; padding: 11px 0;
+    background: var(--ink); color: #fff; border-radius: 100px; font-weight: 700; font-size: 13.5px;
+    transition: background 0.15s;
+  }
+  .card-cta:hover { background: var(--orange); }
+
+  /* ===== FOOTER ===== */
+  footer { padding: 60px 0 40px; position: relative; overflow: hidden; }
+  .footer-grid { display: flex; justify-content: space-between; gap: 40px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .footer-brand .logo { margin-bottom: 10px; }
+  .footer-brand p { color: var(--muted); font-size: 13.5px; max-width: 220px; margin-bottom: 16px; }
+  .social-row { display: flex; gap: 10px; }
+  .social-btn {
+    width: 36px; height: 36px; border-radius: 10px; background: var(--orange);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .footer-col h4 { font-family: var(--font-display); font-weight: 400; font-size: 15px; margin-bottom: 14px; }
+  .footer-col a, .footer-col span { display: block; color: var(--muted); font-size: 13.5px; margin-bottom: 10px; }
+  .footer-doodle { position: absolute; right: -10px; bottom: -30px; opacity: 0.9; pointer-events: none; }
+  .footer-bottom {
+    margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);
+    color: #9a958a; font-size: 12px; text-align: center;
+  }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; }
+  .revealed { opacity: 1; transform: none; }
+
+  @media (max-width: 860px) {
+    .hero, .split { grid-template-columns: 1fr; }
+    .hero-art, .split-art { order: -1; }
+    .hero-art svg, .split-art svg { width: 240px; }
+    .hero p { margin-left: auto; margin-right: auto; }
+    .hero { text-align: center; }
+    .hero-kicker { justify-content: center; }
+  }
+  @media (max-width: 700px) {
+    .wrap { padding: 0 20px; }
+    nav a:not(.btn-pill) { display: none; }
+    .section-head h2 { font-size: 26px; }
+  }
+</style>
 </head>
 <body>
-  <main class="shell">
-    <aside class="sidebar">
-      <div>
-        <div class="brand"><span class="brand-mark">R</span><span>Refund Confirmation</span></div>
-        <h1>환불 내역<br>최종 확인</h1>
-        <p class="lead">메일로 받은 인증번호와 이름을 입력하면 연결된 계정별 환불 예정 내역을 확인할 수 있습니다.</p>
 
-        <form class="form" id="lookupForm">
-          <label>
-            이름
-            <input id="nameInput" autocomplete="name" value="김민준" placeholder="예: 김민준" required>
-          </label>
-          <label>
-            인증번호
-            <input id="codeInput" value="A7K92Q" placeholder="메일에 표시된 인증번호" required>
-          </label>
-          <button class="button primary" id="lookupButton" type="submit">내역 조회</button>
-        </form>
+<div class="top-banner wrap"><div class="ad-zone ad-top">광고 · Google AdSense (728×90)</div></div>
+
+<div class="wrap">
+  <header>
+    <div class="logo">내기판<span class="dot">.</span></div>
+    <nav>
+      <a href="#games">게임 목록</a>
+      <a href="#about">내기판이란</a>
+      <a href="#games" class="btn-pill">지금 시작 →</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero reveal">
+    <div>
+      <div class="hero-kicker">🎲 친구들과 함께</div>
+      <h1>지는 사람이<br><span class="hl">내기판</span>에서<br>결정된다</h1>
+      <p>이름만 넣으면 끝. 랜덤 게임이 오늘의 벌칙자를 대신 골라드립니다.</p>
+      <a href="#games" class="btn-pill">게임 바로 시작 →</a>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 300 300" width="360" height="360" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="150" cy="252" rx="78" ry="12" fill="#17140F" opacity="0.07"/>
+        <path d="M50 235 Q150 268 250 235" stroke="#17140F" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round" fill="none"/>
+        <path d="M46 60 l10 10 M60 46 l0 14 M32 74 l14 0" stroke="#FF5C1A" stroke-width="4" stroke-linecap="round"/>
+        <path d="M250 190 l9 9 M264 176 l0 13 M236 202 l13 0" stroke="#FF5C1A" stroke-width="4" stroke-linecap="round"/>
+        <!-- die -->
+        <polygon points="95,110 138,72 208,72 165,110" fill="#FF5C1A" stroke="#17140F" stroke-width="5" stroke-linejoin="round"/>
+        <polygon points="165,110 208,72 208,158 165,196" fill="#FFD8B8" stroke="#17140F" stroke-width="5" stroke-linejoin="round"/>
+        <rect x="95" y="110" width="70" height="86" rx="10" fill="#FFFFFF" stroke="#17140F" stroke-width="5"/>
+        <circle cx="113" cy="128" r="6.5" fill="#17140F"/>
+        <circle cx="147" cy="128" r="6.5" fill="#17140F"/>
+        <circle cx="113" cy="178" r="6.5" fill="#17140F"/>
+        <circle cx="147" cy="178" r="6.5" fill="#17140F"/>
+        <circle cx="130" cy="153" r="6.5" fill="#17140F"/>
+        <circle cx="184" cy="98" r="4.5" fill="#17140F"/>
+        <circle cx="184" cy="120" r="4.5" fill="#17140F"/>
+        <circle cx="184" cy="142" r="4.5" fill="#17140F"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT / QUOTE SPLIT -->
+<div class="wrap" id="about">
+  <div class="split reveal">
+    <div class="split-art">
+      <svg viewBox="0 0 300 300" width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="150" cy="150" r="112" fill="#FFFFFF" stroke="#17140F" stroke-width="6"/>
+        <path d="M150 150 L260 150 A110 110 0 0 1 227.8 227.8 Z" fill="#FF5C1A"/>
+        <path d="M150 150 L150 260 A110 110 0 0 1 72.2 227.8 Z" fill="#FF5C1A"/>
+        <path d="M150 150 L40 150 A110 110 0 0 1 72.2 72.2 Z" fill="#FF5C1A"/>
+        <path d="M150 150 L150 40 A110 110 0 0 1 227.8 72.2 Z" fill="#FF5C1A"/>
+        <circle cx="150" cy="150" r="112" fill="none" stroke="#17140F" stroke-width="6"/>
+        <g stroke="#17140F" stroke-width="4" stroke-linecap="round">
+          <line x1="150" y1="150" x2="260" y2="150"/>
+          <line x1="150" y1="150" x2="227.8" y2="227.8"/>
+          <line x1="150" y1="150" x2="150" y2="260"/>
+          <line x1="150" y1="150" x2="72.2" y2="227.8"/>
+          <line x1="150" y1="150" x2="40" y2="150"/>
+          <line x1="150" y1="150" x2="72.2" y2="72.2"/>
+          <line x1="150" y1="150" x2="150" y2="40"/>
+          <line x1="150" y1="150" x2="227.8" y2="72.2"/>
+        </g>
+        <circle cx="150" cy="150" r="22" fill="#FFFFFF" stroke="#17140F" stroke-width="5"/>
+        <polygon points="150,14 138,42 162,42" fill="#17140F"/>
+        <circle cx="227.8" cy="72.2" r="6" fill="#17140F"/>
+        <circle cx="72.2" cy="227.8" r="6" fill="#17140F"/>
+      </svg>
+    </div>
+    <div>
+      <p class="quote-text">결과에 승복하는 것도 실력이다. 억울하면 다음 판에서 이겨라. 내기의 세계엔 억울함이 없다, 오직 결과만 있을 뿐. 진 사람은 벌칙, 그게 전부다.</p>
+      <span class="quote-attr">— 내기판 운영진 올림</span>
+    </div>
+  </div>
+</div>
+
+<!-- GAME GRID -->
+<div class="wrap section" id="games">
+  <div class="section-head reveal">
+    <h2>오늘의 라인업</h2>
+  </div>
+  <p class="section-sub reveal">현재 4개 게임이 준비되어 있어요</p>
+
+  <div class="game-grid">
+
+    <div class="game-card reveal" onclick="location.href='brick-survivor.html'">
+      <div class="card-thumb">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="15" width="24" height="12" rx="3" fill="#FFFFFF" stroke="#17140F" stroke-width="3.5"/>
+          <rect x="38" y="15" width="24" height="12" rx="3" fill="#FF5C1A" stroke="#17140F" stroke-width="3.5"/>
+          <rect x="66" y="15" width="24" height="12" rx="3" fill="#FFFFFF" stroke="#17140F" stroke-width="3.5"/>
+          <rect x="24" y="31" width="24" height="12" rx="3" fill="#FFFFFF" stroke="#17140F" stroke-width="3.5"/>
+          <rect x="52" y="31" width="24" height="12" rx="3" fill="#FFFFFF" stroke="#17140F" stroke-width="3.5"/>
+          <circle cx="50" cy="63" r="7" fill="#FF5C1A" stroke="#17140F" stroke-width="3.5"/>
+          <rect x="28" y="80" width="44" height="9" rx="4.5" fill="#17140F"/>
+        </svg>
       </div>
-      <p class="privacy-note">실제 운영에서는 Google Apps Script가 인증번호를 검증하고 해당 유저에게 필요한 항목만 응답합니다.</p>
-    </aside>
+      <div class="card-row1"><span class="card-name">벽돌 서바이버</span><span class="badge-live">LIVE</span></div>
+      <p class="card-desc">70개 벽돌 뒤엔 반드시 배신자가 있다. 마지막까지 살아남은 벽돌 주인이 벌칙.</p>
+      <div class="card-meta"><span class="meta-tag">라스트 원</span><span class="meta-tag">2~10명</span><span class="meta-tag">2분</span></div>
+      <a href="brick-survivor.html" class="card-cta">지금 하기</a>
+    </div>
 
-    <section class="main">
-      <div id="resultView" class="hidden">
-        <div class="toolbar">
-          <span class="pill"><span class="dot"></span><span id="statusText">확인 대기</span></span>
-          <button class="button outline" type="button" id="printButton">인쇄</button>
-        </div>
-
-        <div class="summary">
-          <section class="card">
-            <span>대상자</span>
-            <p class="user-name" id="displayName"></p>
-            <p class="user-meta" id="userMeta"></p>
-          </section>
-          <section class="card">
-            <span>총 환불 예정 금액</span>
-            <strong id="totalRefund"></strong>
-          </section>
-          <section class="card">
-            <span>엑솔라 환불액</span>
-            <strong id="xsollaRefund"></strong>
-          </section>
-          <section class="card">
-            <span>USDT 환불액</span>
-            <strong id="usdtRefund"></strong>
-          </section>
-          <section class="card">
-            <span>아이템 총합</span>
-            <div class="split-metric">
-              <div>
-                <span>칼리움</span>
-                <strong id="kaliumTotal"></strong>
-              </div>
-              <div>
-                <span>사파이어</span>
-                <strong id="sapphireTotal"></strong>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div class="notice">
-          <span class="notice-icon">!</span>
-          <div id="publicNote">환불 예정 금액은 제출 내역과 내부 검증 결과를 기준으로 산정되었습니다.</div>
-        </div>
-
-        <h2 class="section-title">계정별 제출 영수증</h2>
-        <div class="account-list" id="accountList"></div>
-
-        <h2 class="section-title">최종 확인</h2>
-        <section class="actions">
-          <div class="action-row">
-            <button class="button primary" type="button" id="confirmButton">내용이 맞습니다</button>
-            <button class="button dark" type="button" id="requestButton">수정 요청</button>
-          </div>
-          <div class="request-box" id="requestBox">
-            <label style="color: var(--ink)">
-              수정 요청 내용
-              <textarea id="requestMessage" placeholder="수정이 필요한 계정, 금액, 사유를 입력해주세요."></textarea>
-            </label>
-            <label style="color: var(--ink)">
-              회신 받을 이메일
-              <input id="replyEmail" style="background:#fff;color:var(--ink);border-color:var(--line)" placeholder="예: name@example.com">
-            </label>
-            <button class="button primary" type="button" id="sendRequestButton">수정 요청 제출</button>
-          </div>
-          <div class="message" id="messageBox"></div>
-        </section>
+    <div class="game-card reveal" onclick="location.href='ladder-coaster.html'">
+      <div class="card-thumb">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 10 C46 30,18 50,32 90" stroke="#17140F" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <path d="M68 10 C54 30,82 50,68 90" stroke="#17140F" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <line x1="39" y1="25" x2="61" y2="25" stroke="#17140F" stroke-width="4" stroke-linecap="round"/>
+          <line x1="20" y1="50" x2="80" y2="50" stroke="#17140F" stroke-width="4" stroke-linecap="round"/>
+          <line x1="35" y1="75" x2="65" y2="75" stroke="#17140F" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="61" cy="25" r="6" fill="#FF5C1A" stroke="#17140F" stroke-width="3"/>
+        </svg>
       </div>
+      <div class="card-row1"><span class="card-name">롤러코스터 사다리</span><span class="badge-live">LIVE</span></div>
+      <p class="card-desc">꼬이고 비틀린 사다리, 공이 어디로 굴러갈지 아무도 모른다. 벌칙 콜은 단 한 명.</p>
+      <div class="card-meta"><span class="meta-tag">1명 벌칙</span><span class="meta-tag">2~10명</span><span class="meta-tag">3D 연출</span></div>
+      <a href="ladder-coaster.html" class="card-cta">지금 하기</a>
+    </div>
 
-      <div id="adminView" class="hidden">
-        <div class="toolbar">
-          <span class="pill"><span class="dot"></span>관리자 대시보드</span>
-          <button class="button outline" type="button" id="adminPrintButton">인쇄</button>
-        </div>
-
-        <div class="summary">
-          <section class="card">
-            <span>전체 대상자</span>
-            <strong id="adminUserCount"></strong>
-          </section>
-          <section class="card">
-            <span>총 환불 예정 금액</span>
-            <strong id="adminTotalRefund"></strong>
-          </section>
-          <section class="card">
-            <span>엑솔라 환불액</span>
-            <strong id="adminXsollaRefund"></strong>
-          </section>
-          <section class="card">
-            <span>USDT 환불액</span>
-            <strong id="adminUsdtRefund"></strong>
-          </section>
-          <section class="card">
-            <span>아이템 총합</span>
-            <div class="split-metric">
-              <div>
-                <span>칼리움</span>
-                <strong id="adminKaliumTotal"></strong>
-              </div>
-              <div>
-                <span>사파이어</span>
-                <strong id="adminSapphireTotal"></strong>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <h2 class="section-title">대상자별 요약</h2>
-        <div class="table-wrap admin-table">
-          <table aria-label="관리자 대상자별 환불 요약">
-            <thead>
-              <tr>
-                <th class="compact">No.</th>
-                <th class="person">대상자</th>
-                <th class="account-no">계좌번호</th>
-                <th class="compact">계정 수</th>
-                <th class="compact">영수증 수</th>
-                <th class="compact">확인 상태</th>
-                <th class="amount">총 환불액</th>
-                <th class="amount">엑솔라</th>
-                <th class="amount">USDT</th>
-                <th class="compact">칼리움</th>
-                <th class="compact">사파이어</th>
-              </tr>
-            </thead>
-            <tbody id="adminUserRows"></tbody>
-          </table>
-        </div>
+    <div class="game-card reveal" onclick="location.href='dart-spinner.html'">
+      <div class="card-thumb">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="45" cy="55" r="34" fill="#FFFFFF" stroke="#17140F" stroke-width="4"/>
+          <circle cx="45" cy="55" r="23" fill="#FF5C1A"/>
+          <circle cx="45" cy="55" r="23" fill="none" stroke="#17140F" stroke-width="3.5"/>
+          <circle cx="45" cy="55" r="12" fill="#FFFFFF" stroke="#17140F" stroke-width="3.5"/>
+          <circle cx="45" cy="55" r="4" fill="#17140F"/>
+          <line x1="88" y1="12" x2="60" y2="40" stroke="#17140F" stroke-width="4.5" stroke-linecap="round"/>
+          <polygon points="88,12 78,10 90,22" fill="#17140F"/>
+        </svg>
       </div>
+      <div class="card-row1"><span class="card-name">다트 스피너</span><span class="badge-live">LIVE</span></div>
+      <p class="card-desc">돌아가는 다트판에 눈치껏 던지는 타이밍 승부. 최저점이면 그대로 하차.</p>
+      <div class="card-meta"><span class="meta-tag">최저점 탈락</span><span class="meta-tag">2~10명</span><span class="meta-tag">3분</span></div>
+      <a href="dart-spinner.html" class="card-cta">지금 하기</a>
+    </div>
 
-      <div id="emptyState" class="empty">
-        <div>
-          <h2>환불 내역을 조회해주세요</h2>
-          <p>이름과 인증번호를 입력하면 본인에게 연결된 계정별 내역이 표시됩니다.</p>
-        </div>
+    <div class="game-card reveal" onclick="location.href='swim-race.html'">
+      <div class="card-thumb">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="35" cy="38" r="10" fill="#FF5C1A" stroke="#17140F" stroke-width="3.5"/>
+          <path d="M45 39 Q62 28 75 37" stroke="#17140F" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <path d="M35 48 Q41 58 56 61" stroke="#17140F" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <path d="M8 68 Q19 60 30 68 T52 68 T74 68 T96 68" stroke="#17140F" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M8 82 Q19 74 30 82 T52 82 T74 82 T96 82" stroke="#17140F" stroke-width="3.5" fill="none" opacity="0.4" stroke-linecap="round"/>
+        </svg>
       </div>
-    </section>
-  </main>
+      <div class="card-row1"><span class="card-name">수영 레이스</span><span class="badge-live">LIVE</span></div>
+      <p class="card-desc">상어와 해파리가 기다리는 레인에서 펼쳐지는 몸부림 레이스. 꼴찌면 벌칙.</p>
+      <div class="card-meta"><span class="meta-tag">꼴찌 벌칙</span><span class="meta-tag">2~10명</span><span class="meta-tag">15~25초</span></div>
+      <a href="swim-race.html" class="card-cta">지금 하기</a>
+    </div>
 
-  <script>
-    const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxUHCWW7luYjayr6AlpjkFjLj-rQRwON8FZUs12FO6--BVS1skCdTFQ2EbaLFMQpB-z/exec';
+  </div>
+</div>
 
-    const mockResponse = {
-      refund_user_id: 'RF-000001',
-      display_name: '김민준',
-      primary_email_masked: 'min***@example.com',
-      account_count: 3,
-      total_refund_krw: 3482100,
-      xsolla_refund_krw: 2180000,
-      usdt_refund_krw: 441100,
-      other_refund_krw: 861000,
-      kalium_total: 27500,
-      sapphire_total: 12800,
-      public_status: 'pending',
-      public_note: '환불 예정 금액은 제출 내역과 내부 검증 결과를 기준으로 산정되었습니다. 계정, 수량, 금액 중 다른 내용이 있으면 수정 요청을 남겨주세요.',
-      accounts: [
-        {
-          account_id: 'RF-000001-A01',
-          account_email_masked: 'min***@example.com',
-          kalium_total: 18000,
-          kalium_xsolla: 18000,
-          xsolla_refund_krw: 1284000,
-          usdt_ticket_count: 0,
-          usdt_refund_usd: 0,
-          usdt_refund_krw: 0,
-          sapphire_count: 4200,
-          sapphire_refund_krw: 360000,
-          other_label: '',
-          other_refund_krw: 0,
-          account_refund_krw: 1644000,
-          currency_note: '',
-          public_note: '엑솔라 결제 내역 기준',
-          receipts: [
-            { receipt_id: 'RC-000001', transaction_id: 'TRX-20240218-001', receipt_source: 'xsolla', payment_date: '2024-02-18', currency: 'KRW', receipt_amount: 1284000, item_type: '칼리움', refund_base_date: '', exchange_rate: '', refund_amount_krw: 1284000 },
-            { receipt_id: 'RC-000002', transaction_id: 'TRX-20240302-014', receipt_source: 'xsolla', payment_date: '2024-03-02', currency: 'KRW', receipt_amount: 360000, item_type: '사파이어', refund_base_date: '', exchange_rate: '', refund_amount_krw: 360000 }
-          ]
-        },
-        {
-          account_id: 'RF-000001-A02',
-          account_email_masked: 'mj-***@example.com',
-          kalium_total: 9500,
-          kalium_xsolla: 9500,
-          xsolla_refund_krw: 896000,
-          usdt_ticket_count: 320,
-          usdt_refund_usd: 320,
-          usdt_refund_krw: 441100,
-          sapphire_count: 0,
-          sapphire_refund_krw: 0,
-          other_label: 'Tomorrowland',
-          other_refund_krw: 171000,
-          account_refund_krw: 1508100,
-          currency_note: 'USD 기준환율 적용',
-          public_note: 'USD 결제분 포함',
-          receipts: [
-            { receipt_id: 'RC-000003', transaction_id: 'TRX-20240411-032', receipt_source: 'usdt', payment_date: '2024-04-11', currency: 'USD', receipt_amount: 320, item_type: '칼리움 + USDT', refund_base_date: '2024-04-10', exchange_rate: 1378.4375, refund_amount_krw: 1337100 },
-            { receipt_id: 'RC-000004', transaction_id: 'TRX-20240504-008', receipt_source: 'xsolla', payment_date: '2024-05-04', currency: 'KRW', receipt_amount: 171000, item_type: 'Tomorrowland', refund_base_date: '', exchange_rate: '', refund_amount_krw: 171000 }
-          ]
-        },
-        {
-          account_id: 'RF-000001-A03',
-          account_email_masked: 'game***@example.net',
-          kalium_total: 0,
-          kalium_xsolla: 0,
-          xsolla_refund_krw: 0,
-          usdt_ticket_count: 0,
-          usdt_refund_usd: 0,
-          usdt_refund_krw: 0,
-          sapphire_count: 8600,
-          sapphire_refund_krw: 330000,
-          other_label: '',
-          other_refund_krw: 0,
-          account_refund_krw: 330000,
-          currency_note: '',
-          public_note: '사파이어 환불 항목',
-          receipts: [
-            { receipt_id: 'RC-000005', transaction_id: 'TRX-20240522-019', receipt_source: 'xsolla', payment_date: '2024-05-22', currency: 'KRW', receipt_amount: 330000, item_type: '사파이어', refund_base_date: '', exchange_rate: '', refund_amount_krw: 330000 }
-          ]
+<div class="wrap"><div class="ad-zone ad-between">광고 · Google AdSense (728×90)</div></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap footer-grid">
+    <div class="footer-brand">
+      <div class="logo">내기판<span class="dot">.</span></div>
+      <p>친구들과 즐기는 랜덤 게임 모음. 재미로만 봐주세요, 진짜 돈 내기 조장 아닙니다.</p>
+      <div class="social-row">
+        <span class="social-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M14 9V5a1 1 0 0 1 1-1h2"/><path d="M8 12h8"/><path d="M12 8v8"/></svg></span>
+        <span class="social-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 8v4l3 2"/></svg></span>
+        <span class="social-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 21s-7-4.4-9.5-8.5C.6 9 2 5.5 5.5 5c2-.3 3.5.8 4.5 2 1-1.2 2.5-2.3 4.5-2C17.9 5.5 19.4 9 17.5 12.5 15 16.6 12 21 12 21Z"/></svg></span>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>바로가기</h4>
+      <a href="#games">게임 목록</a>
+      <a href="#about">내기판이란</a>
+      <a href="brick-survivor.html">벽돌 서바이버</a>
+    </div>
+    <div class="footer-col">
+      <h4>안내</h4>
+      <span>단순 오락용 무료 서비스</span>
+      <span>실제 금전 내기 조장 안 함</span>
+      <span>2026 내기판</span>
+    </div>
+  </div>
+  <svg class="footer-doodle" width="180" height="140" viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="70" width="46" height="46" rx="10" fill="none" stroke="#FF5C1A" stroke-width="4" transform="rotate(-10 43 93)"/>
+    <circle cx="34" cy="83" r="3.5" fill="#FF5C1A" transform="rotate(-10 43 93)"/>
+    <circle cx="52" cy="103" r="3.5" fill="#FF5C1A" transform="rotate(-10 43 93)"/>
+    <rect x="90" y="40" width="40" height="40" rx="9" fill="none" stroke="#17140F" stroke-width="3.5" transform="rotate(12 110 60)" opacity="0.5"/>
+    <circle cx="145" cy="95" r="18" fill="none" stroke="#FF5C1A" stroke-width="4" opacity="0.6"/>
+  </svg>
+  <div class="wrap footer-bottom">© 2026 내기판 · 단순 오락용 무료 서비스입니다</div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const siblings = [...e.target.parentElement.querySelectorAll('.reveal:not(.revealed)')];
+      siblings.forEach((el, i) => {
+        if (el === e.target || el.parentElement === e.target.parentElement) {
+          setTimeout(() => el.classList.add('revealed'), i * 60);
         }
-      ]
-    };
-
-    let currentResult = null;
-
-    function toNumber(value) {
-      if (value === null || value === undefined || value === '') return 0;
-      if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-      const parsed = Number(String(value).replace(/[^\d.-]/g, ''));
-      return Number.isFinite(parsed) ? parsed : 0;
-    }
-
-    function allReceipts(result) {
-      return (result.accounts || []).flatMap((account) => account.receipts || []);
-    }
-
-    function resultIsAdmin(result) {
-      return result && (result.is_admin === true || result.admin === true || result.type === 'admin');
-    }
-
-    function adminUsers(result) {
-      return result.users || result.results || result.refund_users || [];
-    }
-
-    function mergeUniqueBy(items, getKey) {
-      const map = new Map();
-      (items || []).forEach((item, index) => {
-        const key = getKey(item, index);
-        if (!map.has(key)) map.set(key, item);
       });
-      return Array.from(map.values());
+      e.target.classList.add('revealed');
+      observer.unobserve(e.target);
     }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    function mergeAccounts(accounts) {
-      const map = new Map();
-
-      (accounts || []).forEach((account, accountIndex) => {
-        const key = account.account_id || account.account_email_masked || `account_${accountIndex}`;
-        const existing = map.get(key);
-        const receipts = account.receipts || [];
-
-        if (!existing) {
-          map.set(key, {
-            ...account,
-            receipts: mergeUniqueBy(receipts, receiptKey)
-          });
-          return;
-        }
-
-        existing.receipts = mergeUniqueBy([...(existing.receipts || []), ...receipts], receiptKey);
-        existing.account_refund_krw = toNumber(existing.account_refund_krw) || toNumber(account.account_refund_krw);
-        existing.kalium_total = toNumber(existing.kalium_total) || toNumber(account.kalium_total || account.calium_total);
-        existing.sapphire_count = toNumber(existing.sapphire_count) || toNumber(account.sapphire_count || account.sapphire_total);
-        existing.public_note = existing.public_note || account.public_note;
-      });
-
-      return Array.from(map.values());
-    }
-
-    function receiptKey(receipt, receiptIndex) {
-      const key = [
-        receipt.account_id || '',
-        receipt.receipt_id || '',
-        receipt.transaction_id || '',
-        receipt.payment_date || ''
-      ].filter(Boolean).join('|');
-      return key || `receipt_${receiptIndex}`;
-    }
-
-    function groupAdminUsersByRefundId(users) {
-      const map = new Map();
-
-      (users || []).forEach((user, index) => {
-        const refundUserId = user.refund_user_id || user.refundUserId || `__missing_${index}`;
-        const existing = map.get(refundUserId);
-
-        if (!existing) {
-          map.set(refundUserId, {
-            ...user,
-            refund_user_id: refundUserId,
-            accounts: mergeAccounts(user.accounts || [])
-          });
-          return;
-        }
-
-        existing.accounts = mergeAccounts([...(existing.accounts || []), ...(user.accounts || [])]);
-
-        existing.lookup_name = existing.lookup_name || user.lookup_name;
-        existing.display_name = existing.display_name || user.display_name;
-        existing.name = existing.name || user.name;
-        existing.public_status = existing.public_status || user.public_status;
-      });
-
-      return Array.from(map.values());
-    }
-
-    function normalizeReceiptSource(receipt) {
-      const sourceText = [
-        receipt.receipt_source,
-        receipt.source_type,
-        receipt.source,
-        receipt['구분'],
-        receipt.item_type,
-        receipt.public_note
-      ].filter(Boolean).join(' ').toLowerCase().replace(/\s+/g, '');
-
-      if (sourceText.includes('usdt') || sourceText.includes('udst')) return 'usdt';
-      if (sourceText.includes('xsolla') || sourceText.includes('엑솔라')) return 'xsolla';
-      return sourceText;
-    }
-
-    function sumValues(items, keys) {
-      const keyList = Array.isArray(keys) ? keys : [keys];
-      return items.reduce((total, item) => {
-        const key = keyList.find((candidate) => item[candidate] !== undefined && item[candidate] !== '');
-        return total + (key ? toNumber(item[key]) : 0);
-      }, 0);
-    }
-
-    function resolveTotal(result, keys, fallbackItems, fallbackKeys) {
-      const ownKey = keys.find((key) => result[key] !== undefined && result[key] !== '');
-      if (ownKey && toNumber(result[ownKey]) > 0) return toNumber(result[ownKey]);
-      return sumValues(fallbackItems, fallbackKeys);
-    }
-
-    function formatDateOnly(value) {
-      if (!value) return '-';
-      if (value instanceof Date && !Number.isNaN(value.valueOf())) {
-        const year = value.getFullYear();
-        const month = String(value.getMonth() + 1).padStart(2, '0');
-        const day = String(value.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      }
-      const text = String(value).trim();
-      const match = text.match(/\d{4}-\d{2}-\d{2}/);
-      if (match) return match[0];
-      const parsed = new Date(text);
-      if (!Number.isNaN(parsed.valueOf())) {
-        return parsed.toISOString().slice(0, 10);
-      }
-      return text;
-    }
-
-    const formatKRW = (value) => new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(toNumber(value));
-    const formatNumber = (value) => toNumber(value).toLocaleString('ko-KR');
-
-    function showMessage(text, type = 'success') {
-      const box = document.querySelector('#messageBox');
-      box.textContent = text;
-      box.className = `message active ${type}`;
-    }
-
-    async function lookupRefund(payload) {
-      if (!API_ENDPOINT) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        if (payload.auth_code.toUpperCase() !== 'A7K92Q') throw new Error('입력한 정보와 일치하는 환불 내역이 없습니다.');
-        return mockResponse;
-      }
-
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'lookup', ...payload })
-      });
-      const data = await response.json();
-      if (!data.ok) throw new Error(data.message || '조회에 실패했습니다.');
-      return data.result;
-    }
-
-    async function submitConfirmation(payload) {
-      if (!API_ENDPOINT) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        return { ok: true };
-      }
-
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'confirm', ...payload })
-      });
-      const data = await response.json();
-      if (!data.ok) throw new Error(data.message || '저장에 실패했습니다.');
-      return data;
-    }
-
-    function renderResult(result) {
-      if (resultIsAdmin(result)) {
-        renderAdminResult(result);
-        return;
-      }
-
-      currentResult = result;
-      const receipts = allReceipts(result);
-      const kaliumKeys = ['kalium_count', 'calium_count', 'kalium_total', 'calium_total', 'kalium', 'calium', '칼리움', '칼리움 수량', '칼리움수량'];
-      const kaliumTotal = resolveTotal(result, ['kalium_total', 'calium_total', 'kalium', 'calium', '칼리움', '칼리움 총합'], receipts, kaliumKeys);
-      const sapphireTotal = resolveTotal(result, ['sapphire_total'], receipts, ['sapphire_count', 'sapphire_total']);
-      const xsollaRefund = resolveTotal(
-        result,
-        ['xsolla_refund_krw'],
-        receipts.filter((receipt) => normalizeReceiptSource(receipt) === 'xsolla'),
-        ['refund_amount_krw', 'xsolla_refund_krw']
-      );
-      const usdtRefund = resolveTotal(
-        result,
-        ['usdt_refund_krw', 'udst_refund_krw'],
-        receipts.filter((receipt) => normalizeReceiptSource(receipt) === 'usdt'),
-        ['refund_amount_krw', 'usdt_refund_krw', 'udst_refund_krw']
-      );
-      const totalRefund = toNumber(result.total_refund_krw) || sumValues(receipts, 'refund_amount_krw');
-      const accountCount = toNumber(result.account_count) || (result.accounts || []).length;
-      document.querySelector('#emptyState').classList.add('hidden');
-      document.querySelector('#resultView').classList.remove('hidden');
-      document.querySelector('#adminView').classList.add('hidden');
-      document.querySelector('#displayName').textContent = result.lookup_name || result.display_name;
-      document.querySelector('#userMeta').textContent = `${result.primary_email_masked || ''} · 연결 계정 ${formatNumber(accountCount)}개`;
-      document.querySelector('#totalRefund').textContent = formatKRW(totalRefund);
-      document.querySelector('#xsollaRefund').textContent = formatKRW(xsollaRefund);
-      document.querySelector('#usdtRefund').textContent = formatKRW(usdtRefund);
-      document.querySelector('#kaliumTotal').textContent = formatNumber(kaliumTotal) + '개';
-      document.querySelector('#sapphireTotal').textContent = formatNumber(sapphireTotal) + '개';
-      document.querySelector('#statusText').textContent = result.public_status === 'confirmed' ? '확인 완료' : '확인 대기';
-      document.querySelector('#publicNote').textContent = result.public_note || '환불 예정 금액을 확인해주세요.';
-
-      document.querySelector('#accountList').innerHTML = result.accounts.map((account) => {
-        const accountReceipts = account.receipts || [];
-        const accountKaliumTotal = toNumber(account.kalium_total || account.calium_total || account.kalium || account.calium || account['칼리움']) || sumValues(accountReceipts, kaliumKeys);
-        const accountSapphireTotal = toNumber(account.sapphire_count || account.sapphire_total) || sumValues(accountReceipts, ['sapphire_count', 'sapphire_total']);
-        const accountRefundTotal = toNumber(account.account_refund_krw) || sumValues(accountReceipts, 'refund_amount_krw');
-        const receiptRows = accountReceipts.length ? accountReceipts.map((receipt) => {
-          const receiptSource = normalizeReceiptSource(receipt);
-          const currency = String(receipt.currency || '').toUpperCase();
-          const refundAmount = toNumber(receipt.refund_amount_krw);
-          const isRefundTarget = refundAmount > 0;
-          const cancelReason = isRefundTarget
-            ? '-'
-            : (receipt.refund_cancel_reason || receipt.refund_exclusion_reason || receipt.cancel_reason || receipt['환불 사유'] || receipt['환불취소사유'] || '사유 확인 필요');
-
-          return `
-            <tr>
-              <td class="money">${receipt.transaction_id || '-'}</td>
-              <td class="center"><span class="tag ${isRefundTarget ? 'refund-ok' : 'refund-no'}">${isRefundTarget ? 'O' : 'X'}</span></td>
-              <td>${cancelReason}</td>
-              <td class="center"><span class="tag ${receiptSource}">${receiptSource || '-'}</span></td>
-              <td class="center">${formatDateOnly(receipt.payment_date)}</td>
-              <td class="center"><span class="tag ${currency.toLowerCase()}">${currency || '-'}</span></td>
-              <td class="money">${currency === 'USD' ? '$' + formatNumber(receipt.receipt_amount) : formatKRW(receipt.receipt_amount)}</td>
-              <td class="center">${receipt.item_type || '-'}</td>
-              <td class="money">${formatNumber(sumValues([receipt], kaliumKeys))}개</td>
-              <td class="money">${formatNumber(sumValues([receipt], ['sapphire_count', 'sapphire_total', 'sapphire', '사파이어', '사파이어 수량', '사파이어수량']))}개</td>
-              <td class="center">${currency === 'USD' ? formatDateOnly(receipt.refund_base_date) : '-'}</td>
-              <td class="center">${currency === 'USD' && receipt.exchange_rate ? formatNumber(receipt.exchange_rate) : '-'}</td>
-              <td class="money">${formatKRW(refundAmount)}</td>
-            </tr>
-          `;
-        }).join('') : '<tr><td colspan="13" class="muted">표시할 영수증 내역이 없습니다.</td></tr>';
-
-        return `
-          <section class="account-card">
-            <div class="account-head">
-              <div>
-                <p class="account-title">${account.account_email_masked}</p>
-                <div class="account-sub">${account.account_id} · ${account.public_note || '환불 항목'}</div>
-              </div>
-              <div class="mini-metric"><span>계정 환불액</span><strong>${formatKRW(accountRefundTotal)}</strong></div>
-              <div class="mini-metric"><span>칼리움</span><strong>${formatNumber(accountKaliumTotal)}개</strong></div>
-              <div class="mini-metric"><span>사파이어</span><strong>${formatNumber(accountSapphireTotal)}개</strong></div>
-            </div>
-            <div class="receipt-area">
-              <p class="receipt-title">제출 영수증 목록</p>
-              <div class="receipt-table table-wrap">
-                <table aria-label="${account.account_id} 제출 영수증 목록">
-                  <thead>
-                    <tr>
-                      <th style="width: 18%">Transaction 번호</th>
-                      <th>환불 여부</th>
-                      <th>환불 사유</th>
-                      <th>구분</th>
-                      <th>결제일자</th>
-                      <th>통화</th>
-                      <th>영수증 금액</th>
-                      <th>결제 내용</th>
-                      <th>칼리움 수량</th>
-                      <th>사파이어 수량</th>
-                      <th>환불 적용 기준일</th>
-                      <th>적용 환율</th>
-                      <th>환불액</th>
-                    </tr>
-                  </thead>
-                  <tbody>${receiptRows}</tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        `;
-      }).join('');
-    }
-
-    function renderAdminResult(result) {
-      currentResult = result;
-      const users = groupAdminUsersByRefundId(adminUsers(result));
-      const userRows = users.length ? users.map((user) => {
-        const receipts = allReceipts(user);
-        const xsollaRefund = resolveTotal(
-          user,
-          ['xsolla_refund_krw'],
-          receipts.filter((receipt) => normalizeReceiptSource(receipt) === 'xsolla'),
-          ['refund_amount_krw', 'xsolla_refund_krw']
-        );
-        const usdtRefund = resolveTotal(
-          user,
-          ['usdt_refund_krw', 'udst_refund_krw'],
-          receipts.filter((receipt) => normalizeReceiptSource(receipt) === 'usdt'),
-          ['refund_amount_krw', 'usdt_refund_krw', 'udst_refund_krw']
-        );
-        const kaliumTotal = resolveTotal(user, ['kalium_total', 'calium_total', 'kalium', 'calium', '칼리움', '칼리움 총합'], receipts, ['kalium_count', 'calium_count', 'kalium_total', 'calium_total', 'kalium', 'calium', '칼리움']);
-        const sapphireTotal = resolveTotal(user, ['sapphire_total'], receipts, ['sapphire_count', 'sapphire_total']);
-        const totalRefund = toNumber(user.total_refund_krw) || sumValues(receipts, 'refund_amount_krw');
-        const accountCount = toNumber(user.account_count) || (user.accounts || []).length;
-
-        return {
-          name: user.lookup_name || user.display_name || user.name || '-',
-          bankAccount: user.bank_account || user.account_number || user.refund_account || user['계좌번호'] || '-',
-          accountCount,
-          receiptCount: receipts.length,
-          status: user.public_status || 'pending',
-          totalRefund,
-          xsollaRefund,
-          usdtRefund,
-          kaliumTotal,
-          sapphireTotal
-        };
-      }) : [];
-
-      const summary = result.summary || {};
-      const allUserReceipts = users.flatMap((user) => allReceipts(user));
-      const totalRefund = toNumber(summary.total_refund_krw) || sumValues(userRows, 'totalRefund') || sumValues(allUserReceipts, 'refund_amount_krw');
-      const xsollaRefund = toNumber(summary.xsolla_refund_krw) || sumValues(userRows, 'xsollaRefund');
-      const usdtRefund = toNumber(summary.usdt_refund_krw || summary.udst_refund_krw) || sumValues(userRows, 'usdtRefund');
-      const kaliumTotal = toNumber(summary.kalium_total || summary.calium_total) || sumValues(userRows, 'kaliumTotal');
-      const sapphireTotal = toNumber(summary.sapphire_total) || sumValues(userRows, 'sapphireTotal');
-
-      document.querySelector('#emptyState').classList.add('hidden');
-      document.querySelector('#resultView').classList.add('hidden');
-      document.querySelector('#adminView').classList.remove('hidden');
-      document.querySelector('#adminUserCount').textContent = `${formatNumber(toNumber(summary.user_count) || users.length)}명`;
-      document.querySelector('#adminTotalRefund').textContent = formatKRW(totalRefund);
-      document.querySelector('#adminXsollaRefund').textContent = formatKRW(xsollaRefund);
-      document.querySelector('#adminUsdtRefund').textContent = formatKRW(usdtRefund);
-      document.querySelector('#adminKaliumTotal').textContent = `${formatNumber(kaliumTotal)}개`;
-      document.querySelector('#adminSapphireTotal').textContent = `${formatNumber(sapphireTotal)}개`;
-      document.querySelector('#adminUserRows').innerHTML = userRows.length ? userRows.map((row, index) => `
-        <tr>
-          <td class="compact">${formatNumber(index + 1)}</td>
-          <td class="person">${row.name}</td>
-          <td class="account-no">${row.bankAccount}</td>
-          <td class="compact">${formatNumber(row.accountCount)}개</td>
-          <td class="compact">${formatNumber(row.receiptCount)}건</td>
-          <td class="compact"><span class="tag">${row.status}</span></td>
-          <td class="money amount">${formatKRW(row.totalRefund)}</td>
-          <td class="money amount">${formatKRW(row.xsollaRefund)}</td>
-          <td class="money amount">${formatKRW(row.usdtRefund)}</td>
-          <td class="compact">${formatNumber(row.kaliumTotal)}개</td>
-          <td class="compact">${formatNumber(row.sapphireTotal)}개</td>
-        </tr>
-      `).join('') : '<tr><td colspan="11" class="muted">표시할 대상자 요약이 없습니다.</td></tr>';
-    }
-
-    document.querySelector('#lookupForm').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const button = document.querySelector('#lookupButton');
-      button.disabled = true;
-      button.textContent = '조회 중';
-      try {
-        const result = await lookupRefund({
-          lookup_name: document.querySelector('#nameInput').value.trim(),
-          auth_code: document.querySelector('#codeInput').value.trim()
-        });
-        renderResult(result);
-        document.querySelector('#messageBox').className = 'message';
-      } catch (error) {
-        document.querySelector('#resultView').classList.add('hidden');
-        document.querySelector('#adminView').classList.add('hidden');
-        document.querySelector('#emptyState').classList.remove('hidden');
-        document.querySelector('#emptyState').innerHTML = `<div><h2>조회 결과가 없습니다</h2><p>${error.message}</p></div>`;
-      } finally {
-        button.disabled = false;
-        button.textContent = '내역 조회';
-      }
-    });
-
-    document.querySelector('#requestButton').addEventListener('click', () => {
-      document.querySelector('#requestBox').classList.toggle('active');
-      document.querySelector('#messageBox').className = 'message';
-    });
-
-    document.querySelector('#confirmButton').addEventListener('click', async () => {
-      if (!currentResult) return;
-      await submitConfirmation({
-        refund_user_id: currentResult.refund_user_id,
-        confirm_type: 'confirmed',
-        requester_name: document.querySelector('#nameInput').value.trim(),
-        account_ids: currentResult.accounts.map((item) => item.account_id)
-      });
-      document.querySelector('#requestBox').classList.remove('active');
-      showMessage('확인 완료로 저장되었습니다.');
-    });
-
-    document.querySelector('#sendRequestButton').addEventListener('click', async () => {
-      if (!currentResult) return;
-      const requestMessage = document.querySelector('#requestMessage').value.trim();
-      if (!requestMessage) {
-        showMessage('수정 요청 내용을 입력해주세요.', 'error');
-        return;
-      }
-      await submitConfirmation({
-        refund_user_id: currentResult.refund_user_id,
-        confirm_type: 'change_requested',
-        requester_name: document.querySelector('#nameInput').value.trim(),
-        reply_email: document.querySelector('#replyEmail').value.trim(),
-        request_message: requestMessage,
-        account_ids: currentResult.accounts.map((item) => item.account_id)
-      });
-      showMessage('수정 요청이 접수되었습니다.');
-    });
-
-    document.querySelector('#printButton').addEventListener('click', () => window.print());
-    document.querySelector('#adminPrintButton').addEventListener('click', () => window.print());
-  </script>
+document.querySelectorAll('.game-card').forEach(card => {
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('role', 'button');
+  card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') card.click(); });
+});
+</script>
 </body>
 </html>
